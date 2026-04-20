@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --color-fondo: #faf7f2;
+  --color-fondo-elev: #ffffff;
+  --color-tinta: #0a0a0f;
+  --color-tinta-suave: #4a4a55;
+  --color-borde: #0a0a0f;
+
+  --color-primario-50: #faf5ff;
+  --color-primario-100: #f3e8ff;
+  --color-primario-200: #e9d5ff;
+  --color-primario-300: #d8b4fe;
+  --color-primario-400: #c084fc;
+  --color-primario-500: #a855f7;
+  --color-primario-600: #9333ea;
+  --color-primario-700: #7e22ce;
+  --color-primario-800: #6b21a8;
+  --color-primario-900: #581c87;
+
+  --color-acento: #ec4899;
+  --color-cian: #06b6d4;
+  --color-peligro: #ef4444;
+  --color-exito: #10b981;
+
+  --shadow-brutal: 4px 4px 0 0 var(--color-borde);
+  --shadow-brutal-lg: 6px 6px 0 0 var(--color-borde);
+  --shadow-brutal-xl: 8px 8px 0 0 var(--color-borde);
+  --shadow-glow-primario: 0 0 32px rgba(168, 85, 247, 0.45);
+  --shadow-glow-acento: 0 0 32px rgba(236, 72, 153, 0.45);
+  --shadow-glow-cian: 0 0 32px rgba(6, 182, 212, 0.45);
+}
+
+.dark {
+  --color-fondo: #0a0a0f;
+  --color-fondo-elev: #14141c;
+  --color-tinta: #f5f5fa;
+  --color-tinta-suave: #a0a0b0;
+  --color-borde: #f5f5fa;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-borde);
+  }
+  html, body {
+    height: 100%;
+  }
+  body {
+    background-color: var(--color-fondo);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+    background-size: 24px 24px;
+    background-position: 0 0;
+    background-attachment: fixed;
+  }
+  body {
+    background-color: var(--color-fondo);
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle at 1px 1px, rgba(10,10,15,0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+    z-index: 0;
+  }
+  .dark body::before {
+    background-image: radial-gradient(circle at 1px 1px, rgba(245,245,250,0.04) 1px, transparent 0);
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  ::selection {
+    background: var(--color-primario-500);
+    color: white;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-primario-500);
+    border-radius: 9999px;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background-color: color-mix(in srgb, var(--color-fondo-elev) 70%, transparent);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .gradient-primario {
+    background-image: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  }
+  .text-gradient-primario {
+    background-image: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .grain {
+    position: relative;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+
+@keyframes pulso-rojo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+}
+.animar-pulso-rojo {
+  animation: pulso-rojo 1s ease-out infinite;
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+}
+.animar-glitch {
+  animation: glitch 0.4s ease-in-out infinite;
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animar-flotar {
+  animation: flotar 4s ease-in-out infinite;
+}
