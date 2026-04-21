@@ -1,6 +1,6 @@
 import type { ConfigPartida, RondaDatos, SalaOnline } from "./types";
 import { buscarCategoria, CATEGORIAS } from "./palabras";
-import { elegirAleatorio, generarCodigoSala, generarId } from "./utils";
+import { elegirAleatorio, generarCodigoSala, generarId, seleccionarImpostorAleatorio } from "./utils";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -115,7 +115,7 @@ export function iniciar(codigo: string, jugadorId: string): { error?: string } {
   const cat = buscarCategoria(sala.config.categoriaId);
   if (!cat) return { error: "Categoría inválida" };
   const palabra = elegirAleatorio(cat.palabras[sala.config.dificultad]);
-  const impostor = elegirAleatorio(sala.jugadores);
+  const impostor = sala.jugadores[seleccionarImpostorAleatorio(sala.jugadores.length)];
   const ronda: RondaDatos = {
     categoriaId: cat.id,
     categoriaNombre: cat.nombre,

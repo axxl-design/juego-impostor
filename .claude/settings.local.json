@@ -24,7 +24,8 @@
       "Bash(curl -s -I http://localhost:3000/online)",
       "Bash(xargs -r kill)",
       "Bash(powershell -NoProfile -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(node *)"
     ]
   }
 }

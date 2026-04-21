@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ConfigPartida, Dificultad, RondaDatos } from "./types";
 import { buscarCategoria, CATEGORIAS } from "./palabras";
-import { elegirAleatorio, generarId } from "./utils";
+import { elegirAleatorio, generarId, seleccionarImpostorAleatorio } from "./utils";
 
 export type Fase = "config" | "reparto" | "discusion" | "votacion" | "resultado";
 
@@ -80,7 +80,7 @@ export const useJuegoLocal = create<Estado>()(
         if (!cat) return;
         const dif: Dificultad = config.dificultad;
         const palabra = elegirAleatorio(cat.palabras[dif]);
-        const impostor = elegirAleatorio(jugadores);
+        const impostor = jugadores[seleccionarImpostorAleatorio(jugadores.length)];
         set({
           ronda: {
             categoriaId: cat.id,

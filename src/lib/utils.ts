@@ -51,6 +51,15 @@ export function elegirAleatorio<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+export function seleccionarImpostorAleatorio(totalJugadores: number): number {
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] % totalJugadores;
+  }
+  return Math.floor(Math.random() * totalJugadores);
+}
+
 export function mezclar<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
