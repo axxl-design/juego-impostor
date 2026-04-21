@@ -43,9 +43,12 @@ export function ResultadoLocal() {
           transition={{ type: "spring", stiffness: 240, damping: 20 }}
         >
           <Card
-            className={`p-8 text-center text-white overflow-hidden relative ${
-              civilesGanan ? "gradient-primario" : "bg-[#0a0a0f]"
-            }`}
+            className="p-8 text-center text-white overflow-hidden relative"
+            style={{
+              background: civilesGanan
+                ? "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)"
+                : "#0a0a0f",
+            }}
           >
             <div className="flex justify-center mb-4">
               <span className="grid place-items-center h-20 w-20 rounded-3xl bg-white/20 backdrop-blur border-2 border-white/30">

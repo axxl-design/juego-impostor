@@ -59,8 +59,8 @@ export default function Landing() {
             transition={{ delay: 0.4 }}
             className="mt-16 grid grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto"
           >
-            <Stat numero="8" texto="categorías" />
-            <Stat numero="960+" texto="palabras" />
+            <Stat numero="15" texto="categorías" />
+            <Stat numero="1800+" texto="palabras" />
             <Stat numero="3" texto="dificultades" />
           </motion.div>
         </div>
