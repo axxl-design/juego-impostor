@@ -36,6 +36,47 @@ export type RondaDatos = {
   impostorCiego: boolean;
 };
 
+export type ModoVictoria = "puntos" | "rondas";
+
+export type ConfigQuienSoy = {
+  categoriaId: string;
+  dificultad: Dificultad;
+  duracionSeg: number;
+  modoVictoria: ModoVictoria;
+  objetivo: number;
+};
+
+export type JugadorQuienSoy = {
+  id: string;
+  nombre: string;
+  palabra: string;
+  puntos: number;
+  haVisto: boolean;
+};
+
+export type SalaQuienSoy = {
+  codigo: string;
+  hostId: string;
+  jugadores: { id: string; nombre: string; puntos: number; haVisto: boolean }[];
+  palabras: Record<string, string>;
+  config: ConfigQuienSoy;
+  fase: "lobby" | "reparto" | "juego" | "fin";
+  rondaActual: number;
+  finEn: number | null;
+  ultimaAdivinanza: {
+    deId: string;
+    deNombre: string;
+    aId: string;
+    aNombre: string;
+    intento: string;
+    palabraReal: string;
+    acerto: boolean;
+    ts: number;
+  } | null;
+  ganador: { tipo: "puntos" | "rondas"; ids: string[] } | null;
+  creadaEn: number;
+};
+
 export type SalaOnline = {
   codigo: string;
   hostId: string;

@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import {
+  adivinar,
   configurar,
-  forzarCierre,
+  continuarHost,
   iniciar,
-  nuevaRonda,
+  jugarOtraVez,
+  marcarPalabraVista,
   obtenerSala,
-  pasarAVotacion,
   salir,
+  timeoutRonda,
   unirse,
   vistaPublica,
-  votar,
-} from "@/lib/sala-store";
+  volverALobby,
+} from "@/lib/sala-store-quien-soy";
 import { broadcast } from "@/lib/pusher-server";
 
 export const runtime = "nodejs";
@@ -21,10 +23,12 @@ type Accion =
   | { tipo: "salir"; jugadorId: string }
   | { tipo: "configurar"; jugadorId: string; config: Record<string, unknown> }
   | { tipo: "iniciar"; jugadorId: string }
-  | { tipo: "pasarVotacion"; jugadorId: string }
-  | { tipo: "votar"; jugadorId: string; votadoId: string }
-  | { tipo: "cerrarVotacion"; jugadorId: string }
-  | { tipo: "nuevaRonda"; jugadorId: string };
+  | { tipo: "marcarVisto"; jugadorId: string }
+  | { tipo: "continuar"; jugadorId: string }
+  | { tipo: "adivinar"; jugadorId: string; aId: string; intento: string }
+  | { tipo: "timeoutRonda"; jugadorId: string }
+  | { tipo: "jugarOtraVez"; jugadorId: string }
+  | { tipo: "volverALobby"; jugadorId: string };
 
 export async function POST(req: Request, ctx: { params: Promise<{ codigo: string }> }) {
   const { codigo } = await ctx.params;
@@ -39,6 +43,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
   }
 
   let extra: Record<string, unknown> = {};
+  let palabrasReasignadas = false;
 
   switch (body.tipo) {
     case "unirse": {
@@ -56,22 +61,37 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
     case "iniciar": {
       const r = iniciar(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      palabrasReasignadas = true;
       break;
     }
-    case "pasarVotacion":
-      pasarAVotacion(codigo, body.jugadorId);
+    case "marcarVisto":
+      marcarPalabraVista(codigo, body.jugadorId);
       break;
-    case "votar":
-      votar(codigo, body.jugadorId, body.votadoId);
+    case "continuar":
+      continuarHost(codigo, body.jugadorId);
       break;
-    case "cerrarVotacion":
-      forzarCierre(codigo, body.jugadorId);
-      break;
-    case "nuevaRonda": {
-      const r = nuevaRonda(codigo, body.jugadorId);
+    case "adivinar": {
+      const r = adivinar(codigo, body.jugadorId, body.aId, body.intento);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      extra = { acerto: r.acerto, fin: r.fin };
+      if (r.acerto) palabrasReasignadas = true;
       break;
     }
+    case "timeoutRonda": {
+      const r = timeoutRonda(codigo);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      palabrasReasignadas = true;
+      break;
+    }
+    case "jugarOtraVez": {
+      const r = jugarOtraVez(codigo, body.jugadorId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      palabrasReasignadas = true;
+      break;
+    }
+    case "volverALobby":
+      volverALobby(codigo, body.jugadorId);
+      break;
     default:
       return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });
   }
@@ -79,6 +99,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
   const sala = obtenerSala(codigo);
   if (!sala) return NextResponse.json({ ok: true, ...extra });
   const publica = vistaPublica(sala);
-  await broadcast(codigo, "estado-actualizado", publica);
+  await broadcast(`quien-soy-${codigo}`, "estado-actualizado", publica);
+  if (palabrasReasignadas) {
+    await broadcast(`quien-soy-${codigo}`, "palabras-asignadas", { ts: Date.now() });
+  }
   return NextResponse.json({ sala: publica, ...extra });
 }

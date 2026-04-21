@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, VenetianMask } from "lucide-react";
+import { ArrowLeft, Vault } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 
 export function Header({ volver }: { volver?: string }) {
@@ -18,10 +18,11 @@ export function Header({ volver }: { volver?: string }) {
       ) : (
         <Link href="/" className="inline-flex items-center gap-3">
           <span className="grid place-items-center h-11 w-11 rounded-2xl gradient-primario border-2 border-[var(--color-borde)] shadow-[var(--shadow-brutal)] text-white">
-            <VenetianMask className="h-5 w-5" />
+            <Vault className="h-5 w-5" />
           </span>
           <span className="font-display font-bold text-lg leading-none tracking-tight">
-            Impostor
+            <span className="text-gradient-primario">VANNY</span>{" "}
+            <span className="hidden xs:inline sm:inline">Games Vault</span>
           </span>
         </Link>
       )}

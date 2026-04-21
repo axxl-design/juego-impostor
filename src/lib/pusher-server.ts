@@ -25,11 +25,11 @@ export function obtenerPusher(): Pusher | null {
   return _pusher;
 }
 
-export async function broadcast(codigo: string, evento: string, datos: unknown) {
+export async function broadcast(canal: string, evento: string, datos: unknown) {
   const p = obtenerPusher();
   if (!p) return;
   try {
-    await p.trigger(`sala-${codigo}`, evento, datos);
+    await p.trigger(canal, evento, datos);
   } catch (e) {
     console.error("[pusher] broadcast falló", e);
   }

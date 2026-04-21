@@ -4,20 +4,22 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Header } from "@/components/header";
-import { LobbyOnline } from "@/components/online/lobby-online";
-import { JuegoOnline } from "@/components/online/juego-online";
+import { LobbyOnlineQuienSoy } from "@/components/quien-soy/lobby-online";
+import { JuegoOnlineQuienSoy } from "@/components/quien-soy/juego-online";
 import {
-  guardarJugadorId,
+  guardarJugadorIdQS,
+  obtenerJugadorIdQS,
+  useSalaQuienSoy,
+} from "@/lib/use-sala-quien-soy";
+import {
   guardarNombre,
-  obtenerJugadorId,
   obtenerNombreGuardado,
-  useSala,
-} from "@/lib/use-sala";
+} from "@/lib/use-sala-impostor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
-export default function SalaPage({
+export default function QuienSoySalaPage({
   params,
 }: {
   params: Promise<{ codigo: string }>;
@@ -29,11 +31,11 @@ export default function SalaPage({
   const [montado, setMontado] = useState(false);
 
   useEffect(() => {
-    setJugadorId(obtenerJugadorId(codigo));
+    setJugadorId(obtenerJugadorIdQS(codigo));
     setMontado(true);
   }, [codigo]);
 
-  const { sala, rol, error, cargando, accion } = useSala(codigo, jugadorId);
+  const { sala, palabra, error, cargando, accion } = useSalaQuienSoy(codigo, jugadorId);
 
   useEffect(() => {
     if (!sala || !jugadorId) return;
@@ -52,7 +54,7 @@ export default function SalaPage({
           <Card className="p-6 max-w-sm text-center">
             <h1 className="font-display font-bold text-2xl">Sala no disponible</h1>
             <p className="mt-2 text-[var(--color-tinta-suave)]">{error}</p>
-            <Button className="mt-4 w-full" onClick={() => router.push("/online")}>
+            <Button className="mt-4 w-full" onClick={() => router.push("/quien-soy/online")}>
               Volver
             </Button>
           </Card>
@@ -78,7 +80,7 @@ export default function SalaPage({
         codigo={codigo}
         onUnido={(id) => {
           setJugadorId(id);
-          guardarJugadorId(codigo, id);
+          guardarJugadorIdQS(codigo, id);
         }}
         accion={accion}
       />
@@ -99,9 +101,9 @@ export default function SalaPage({
             className="flex-1 flex flex-col"
           >
             {sala.fase === "lobby" ? (
-              <LobbyOnline sala={sala} jugadorId={jugadorId} accion={accion} />
+              <LobbyOnlineQuienSoy sala={sala} jugadorId={jugadorId} accion={accion} />
             ) : (
-              <JuegoOnline sala={sala} rol={rol} jugadorId={jugadorId} accion={accion} />
+              <JuegoOnlineQuienSoy sala={sala} palabra={palabra} jugadorId={jugadorId} accion={accion} />
             )}
           </motion.div>
         </AnimatePresence>
@@ -146,7 +148,7 @@ function UnirseUI({
       <main className="flex-1 grid place-items-center px-6">
         <Card className="p-6 max-w-sm w-full">
           <div className="text-xs uppercase tracking-widest text-[var(--color-tinta-suave)]">
-            Te invitaron a la sala
+            ¿Quién Soy? · Te invitaron
           </div>
           <div className="font-mono font-bold text-4xl tracking-[0.4em] mt-1 text-gradient-primario">
             {codigo}

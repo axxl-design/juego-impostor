@@ -63,3 +63,63 @@ export function mezclar<T>(arr: T[]): T[] {
 export function cn(...clases: (string | false | null | undefined)[]): string {
   return clases.filter(Boolean).join(" ");
 }
+
+function normalizar(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = new Array(b.length + 1);
+  let curr = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const costo = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + costo);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[b.length];
+}
+
+export function esMismaPalabra(input: string, objetivo: string): boolean {
+  const ni = normalizar(input);
+  const no = normalizar(objetivo);
+  if (!ni || !no) return false;
+  if (ni === no) return true;
+
+  const sin = (s: string) => s.replace(/\s+/g, "");
+  const niCompacto = sin(ni);
+  const noCompacto = sin(no);
+  if (niCompacto === noCompacto) return true;
+
+  const tol = noCompacto.length <= 4 ? 1 : 2;
+  if (levenshtein(ni, no) <= tol) return true;
+  if (levenshtein(niCompacto, noCompacto) <= tol) return true;
+
+  if (niCompacto.length >= 4 && noCompacto.includes(niCompacto)) return true;
+
+  const noTokens = no.split(" ").filter((t) => t.length >= 3);
+  const niTokens = ni.split(" ").filter((t) => t.length >= 1);
+  if (noTokens.length > 0 && niTokens.length > 0) {
+    const todosMatch = noTokens.every((nt) =>
+      niTokens.some((it) => {
+        const tt = nt.length <= 4 ? 1 : 2;
+        return it === nt || levenshtein(it, nt) <= tt;
+      }),
+    );
+    if (todosMatch) return true;
+  }
+
+  return false;
+}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Vote, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useJuegoLocal } from "@/lib/store-local";
+import { useJuegoLocal } from "@/lib/store-local-impostor";
 import { formatearTiempo } from "@/lib/utils";
 
 export function TemporizadorPantalla() {

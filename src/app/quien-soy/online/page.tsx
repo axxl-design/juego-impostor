@@ -8,14 +8,11 @@ import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  guardarJugadorId,
-  guardarNombre,
-  obtenerNombreGuardado,
-} from "@/lib/use-sala";
+import { guardarNombre, obtenerNombreGuardado } from "@/lib/use-sala-impostor";
+import { guardarJugadorIdQS } from "@/lib/use-sala-quien-soy";
 import { pusherConfiguradoCliente } from "@/lib/pusher-client";
 
-export default function OnlinePage() {
+export default function QuienSoyOnlinePage() {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [codigo, setCodigo] = useState("");
@@ -35,15 +32,15 @@ export default function OnlinePage() {
     setCargando(true);
     guardarNombre(nombre);
     try {
-      const r = await fetch("/api/sala/crear", {
+      const r = await fetch("/api/quien-soy/sala/crear", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ nombre }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "Error creando sala");
-      guardarJugadorId(j.codigo, j.jugadorId);
-      router.push(`/sala/${j.codigo}`);
+      guardarJugadorIdQS(j.codigo, j.jugadorId);
+      router.push(`/quien-soy/sala/${j.codigo}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
       setCargando(false);
@@ -58,15 +55,15 @@ export default function OnlinePage() {
     setCargando(true);
     guardarNombre(nombre);
     try {
-      const r = await fetch(`/api/sala/${cod}/accion`, {
+      const r = await fetch(`/api/quien-soy/sala/${cod}/accion`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tipo: "unirse", nombre }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "No se pudo entrar");
-      guardarJugadorId(cod, j.jugadorId);
-      router.push(`/sala/${cod}`);
+      guardarJugadorIdQS(cod, j.jugadorId);
+      router.push(`/quien-soy/sala/${cod}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
       setCargando(false);
@@ -83,10 +80,10 @@ export default function OnlinePage() {
           className="w-full max-w-md mt-4"
         >
           <h1 className="font-display font-bold text-4xl sm:text-5xl tracking-tight text-center">
-            Jugar online
+            ¿Quién Soy? online
           </h1>
           <p className="mt-2 text-center text-[var(--color-tinta-suave)]">
-            Cada jugador desde su celular.
+            Cada jugador desde su celular. 2 a 6 jugadores.
           </p>
 
           {sinPusher && (

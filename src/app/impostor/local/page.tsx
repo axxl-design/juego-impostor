@@ -8,7 +8,7 @@ import { RepartoLocal } from "@/components/juego/reparto-local";
 import { TemporizadorPantalla } from "@/components/juego/temporizador";
 import { VotacionLocal } from "@/components/juego/votacion-local";
 import { ResultadoLocal } from "@/components/juego/resultado-local";
-import { useJuegoLocal } from "@/lib/store-local";
+import { useJuegoLocal } from "@/lib/store-local-impostor";
 
 export default function LocalPage() {
   const fase = useJuegoLocal((s) => s.fase);

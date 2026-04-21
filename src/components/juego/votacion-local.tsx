@@ -6,7 +6,7 @@ import { Check, Vote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { useJuegoLocal } from "@/lib/store-local";
+import { useJuegoLocal } from "@/lib/store-local-impostor";
 import { cn } from "@/lib/utils";
 
 export function VotacionLocal() {

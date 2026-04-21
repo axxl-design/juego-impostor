@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { obtenerSala, vistaPublica } from "@/lib/sala-store";
+import { obtenerSala, vistaPublica } from "@/lib/sala-store-impostor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

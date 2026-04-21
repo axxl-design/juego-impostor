@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Smartphone, Globe, Sparkles, VenetianMask } from "lucide-react";
+import { Sparkles, VenetianMask, HelpCircle, Lock } from "lucide-react";
 import { Header } from "@/components/header";
 
-export default function Landing() {
+export default function Hub() {
   return (
     <div className="flex flex-col min-h-screen relative">
       <Header />
@@ -15,53 +15,64 @@ export default function Landing() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-center pt-8 sm:pt-16"
+            className="text-center pt-6 sm:pt-12"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)] mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)] mb-6 sm:mb-8">
               <Sparkles className="h-4 w-4 text-[var(--color-primario-500)]" />
-              <span className="text-sm font-semibold tracking-tight">3 a 10 jugadores · Para reunirse</span>
+              <span className="text-sm font-semibold tracking-tight">Juegos casuales · Para reunirse</span>
             </div>
-            <h1 className="font-display font-bold text-balance leading-[0.95] tracking-tighter text-6xl sm:text-7xl md:text-8xl">
-              Encontrá al
+            <h1 className="font-display font-black text-balance leading-[0.92] tracking-tighter text-6xl sm:text-7xl md:text-8xl">
+              <span className="text-gradient-primario">VANNY</span>
               <br />
-              <span className="text-gradient-primario">impostor.</span>
+              Games Vault.
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-[var(--color-tinta-suave)] max-w-xl mx-auto text-balance">
-              Una palabra secreta. Un infiltrado entre ustedes. Hagan
-              preguntas, mientan bien y atrápenlo antes de que se acabe el
-              tiempo.
+            <p className="mt-5 sm:mt-6 text-lg sm:text-xl text-[var(--color-tinta-suave)] max-w-xl mx-auto text-balance">
+              Juegos casuales para pasarla bien con amigos. Elegí uno y empezá a jugar.
             </p>
           </motion.div>
 
-          <div className="mt-12 sm:mt-20 grid gap-6 sm:gap-8 md:grid-cols-2">
-            <ModoCard
-              href="/local"
-              titulo="Un dispositivo"
-              descripcion="Pasen el celular de mano en mano. Cada uno ve su rol en privado."
-              icono={<Smartphone className="h-8 w-8" />}
+          <div className="mt-10 sm:mt-16 grid gap-6 sm:gap-8 md:grid-cols-2">
+            <JuegoCard
+              href="/impostor/local"
+              hrefSecundario="/impostor/online"
+              titulo="El Juego del Impostor"
+              tagline="Encontrá al infiltrado entre tus amigos."
+              descripcion="Una palabra secreta. Uno no la sabe. Háganse preguntas y atrápenlo antes de que se acabe el tiempo."
+              meta="15 categorías · 2-8 jugadores · Local + Online"
+              icono={<VenetianMask className="h-8 w-8" />}
               variante="primario"
               delay={0.1}
-              destacado
             />
-            <ModoCard
-              href="/online"
-              titulo="Online"
-              descripcion="Cada uno desde su celular. Compartí el link y juegan juntos."
-              icono={<Globe className="h-8 w-8" />}
+            <JuegoCard
+              href="/quien-soy/local"
+              hrefSecundario="/quien-soy/online"
+              titulo="¿Quién Soy?"
+              tagline="Adiviná qué personaje sos."
+              descripcion="Cada uno recibe una palabra secreta. Hagan preguntas, deduzcan y traten de adivinar la del otro antes que el tiempo se acabe."
+              meta="15 categorías · 2-6 jugadores · Local + Online"
+              icono={<HelpCircle className="h-8 w-8" />}
               variante="cian"
               delay={0.2}
             />
           </div>
 
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mt-16 grid grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.4 }}
+            className="mt-10 sm:mt-12"
           >
-            <Stat numero="15" texto="categorías" />
-            <Stat numero="1800+" texto="palabras" />
-            <Stat numero="3" texto="dificultades" />
+            <div className="flex items-center gap-3 mb-4 px-1">
+              <span className="text-xs uppercase tracking-widest font-bold text-[var(--color-tinta-suave)]">
+                Próximamente
+              </span>
+              <div className="flex-1 h-px bg-[var(--color-borde)] opacity-20" />
+            </div>
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+              <ProximoCard etiqueta="Más juegos en camino" />
+              <ProximoCard etiqueta="¿Sugerís uno?" />
+              <ProximoCard etiqueta="Próximamente" />
+            </div>
           </motion.div>
         </div>
       </main>
@@ -72,22 +83,26 @@ export default function Landing() {
   );
 }
 
-function ModoCard({
+function JuegoCard({
   href,
+  hrefSecundario,
   titulo,
+  tagline,
   descripcion,
+  meta,
   icono,
   variante,
   delay,
-  destacado,
 }: {
   href: string;
+  hrefSecundario: string;
   titulo: string;
+  tagline: string;
   descripcion: string;
+  meta: string;
   icono: React.ReactNode;
   variante: "primario" | "cian";
   delay: number;
-  destacado?: boolean;
 }) {
   const fondo =
     variante === "primario"
@@ -98,51 +113,50 @@ function ModoCard({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      whileHover={{ y: -4 }}
+      className={`relative rounded-3xl border-2 border-[var(--color-borde)] shadow-[var(--shadow-brutal-xl)] p-6 sm:p-8 h-full overflow-hidden ${fondo}`}
     >
-      <Link href={href} className="block group">
-        <motion.div
-          whileHover={{ y: -4 }}
-          whileTap={{ x: 6, y: 6, boxShadow: "0 0 0 0 var(--color-borde)" }}
-          transition={{ duration: 0.15 }}
-          className={`relative rounded-3xl border-2 border-[var(--color-borde)] shadow-[var(--shadow-brutal-xl)] p-7 sm:p-9 h-full overflow-hidden ${fondo}`}
+      <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-white/20 backdrop-blur border-2 border-white/30 mb-5 relative z-10">
+        {icono}
+      </div>
+      <h2 className="font-display font-black text-3xl sm:text-4xl leading-[1.05] tracking-tight mb-2 relative z-10">
+        {titulo}
+      </h2>
+      <div className="text-base sm:text-lg font-semibold text-white/90 mb-3 relative z-10">
+        {tagline}
+      </div>
+      <p className="text-white/80 text-sm sm:text-base leading-snug relative z-10">
+        {descripcion}
+      </p>
+      <div className="mt-5 inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider bg-white/15 backdrop-blur border-2 border-white/30 rounded-full px-3 py-1 relative z-10">
+        {meta}
+      </div>
+      <div className="mt-6 grid grid-cols-2 gap-2 relative z-10">
+        <Link
+          href={href}
+          className="h-12 rounded-2xl bg-white text-[var(--color-tinta)] border-2 border-white flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/90 active:translate-x-1 active:translate-y-1 transition"
         >
-          {destacado && (
-            <span className="absolute top-4 right-4 text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-white/20 backdrop-blur">
-              Más rápido
-            </span>
-          )}
-          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-white/20 backdrop-blur border-2 border-white/30 mb-6">
-            {icono}
-          </div>
-          <h2 className="font-display font-bold text-3xl sm:text-4xl leading-tight tracking-tight mb-3">
-            {titulo}
-          </h2>
-          <p className="text-white/90 text-base sm:text-lg leading-snug">
-            {descripcion}
-          </p>
-          <div className="mt-8 inline-flex items-center gap-2 font-semibold">
-            Empezar
-            <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
-          </div>
-          <VenetianMask
-            className="absolute -right-6 -bottom-6 h-40 w-40 opacity-15 rotate-12 pointer-events-none"
-            strokeWidth={1.5}
-          />
-        </motion.div>
-      </Link>
+          Jugar local
+          <span className="inline-block">→</span>
+        </Link>
+        <Link
+          href={hrefSecundario}
+          className="h-12 rounded-2xl bg-white/15 backdrop-blur border-2 border-white/40 text-white flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/25 active:translate-x-1 active:translate-y-1 transition"
+        >
+          Jugar online →
+        </Link>
+      </div>
     </motion.div>
   );
 }
 
-function Stat({ numero, texto }: { numero: string; texto: string }) {
+function ProximoCard({ etiqueta }: { etiqueta: string }) {
   return (
-    <div className="text-center">
-      <div className="font-mono font-bold text-3xl sm:text-4xl text-gradient-primario">
-        {numero}
-      </div>
-      <div className="text-xs sm:text-sm text-[var(--color-tinta-suave)] uppercase tracking-wider mt-1">
-        {texto}
-      </div>
+    <div className="rounded-2xl border-2 border-dashed border-[var(--color-borde)] bg-[var(--color-fondo-elev)]/50 p-5 min-h-32 flex flex-col items-center justify-center text-center gap-2 opacity-60">
+      <Lock className="h-5 w-5 text-[var(--color-tinta-suave)]" />
+      <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-tinta-suave)]">
+        {etiqueta}
+      </span>
     </div>
   );
 }

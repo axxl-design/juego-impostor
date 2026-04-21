@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Play, Users, Tag, Gauge, Clock, EyeOff } from "lucide-react";
+import { Plus, Trash2, Play, Users, Tag, Gauge, Clock, Trophy, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { CATEGORIAS } from "@/lib/palabras";
-import { useJuegoLocal } from "@/lib/store-local-impostor";
-import type { Dificultad } from "@/lib/types";
+import { useJuegoQuienSoyLocal } from "@/lib/store-local-quien-soy";
+import type { Dificultad, ModoVictoria } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
@@ -19,14 +19,19 @@ const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
 ];
 
 const TIEMPOS = [
-  { seg: 60, label: "1m" },
+  { seg: 120, label: "2m" },
   { seg: 180, label: "3m" },
   { seg: 300, label: "5m" },
-  { seg: 480, label: "8m" },
+  { seg: 420, label: "7m" },
   { seg: 600, label: "10m" },
 ];
 
-export function SetupLocal() {
+const MODOS: { id: ModoVictoria; nombre: string; sub: string; min: number; max: number; def: number }[] = [
+  { id: "puntos", nombre: "Primero a X puntos", sub: "Gana el primero que llegue al objetivo", min: 3, max: 20, def: 5 },
+  { id: "rondas", nombre: "X rondas", sub: "Al terminar las rondas, gana el de más puntos", min: 3, max: 15, def: 5 },
+];
+
+export function SetupLocalQuienSoy() {
   const {
     jugadores,
     config,
@@ -34,10 +39,11 @@ export function SetupLocal() {
     quitarJugador,
     setConfig,
     iniciarPartida,
-  } = useJuegoLocal();
+  } = useJuegoQuienSoyLocal();
   const [nombre, setNombre] = useState("");
 
-  const puedeEmpezar = jugadores.length >= 3;
+  const puedeEmpezar = jugadores.length >= 2 && jugadores.length <= 6;
+  const modoActivo = MODOS.find((m) => m.id === config.modoVictoria) ?? MODOS[0];
 
   const onAgregar = () => {
     if (!nombre.trim()) return;
@@ -46,9 +52,8 @@ export function SetupLocal() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 sm:px-6 pb-24 space-y-8">
-      {/* Jugadores */}
-      <Section icono={<Users className="h-5 w-5" />} titulo="Jugadores" sub={`${jugadores.length}/10 — mínimo 3`}>
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 pb-28 space-y-8">
+      <Section icono={<Users className="h-5 w-5" />} titulo="Jugadores" sub={`${jugadores.length}/6 — mínimo 2`}>
         <Card className="p-4 sm:p-5">
           <form
             onSubmit={(e) => {
@@ -64,7 +69,7 @@ export function SetupLocal() {
               maxLength={20}
               autoFocus
             />
-            <Button type="submit" tamano="md" disabled={!nombre.trim() || jugadores.length >= 10} className="shrink-0 px-4">
+            <Button type="submit" tamano="md" disabled={!nombre.trim() || jugadores.length >= 6} className="shrink-0 px-4">
               <Plus className="h-5 w-5" />
             </Button>
           </form>
@@ -93,14 +98,13 @@ export function SetupLocal() {
             </AnimatePresence>
             {jugadores.length === 0 && (
               <li className="text-center text-sm text-[var(--color-tinta-suave)] py-6">
-                Agregá al menos 3 jugadores
+                Agregá entre 2 y 6 jugadores
               </li>
             )}
           </ul>
         </Card>
       </Section>
 
-      {/* Categoría */}
       <Section icono={<Tag className="h-5 w-5" />} titulo="Categoría">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {CATEGORIAS.map((c) => {
@@ -125,7 +129,6 @@ export function SetupLocal() {
         </div>
       </Section>
 
-      {/* Dificultad */}
       <Section icono={<Gauge className="h-5 w-5" />} titulo="Dificultad">
         <div className="grid grid-cols-3 gap-3">
           {DIFICULTADES.map((d) => {
@@ -149,8 +152,7 @@ export function SetupLocal() {
         </div>
       </Section>
 
-      {/* Tiempo */}
-      <Section icono={<Clock className="h-5 w-5" />} titulo="Tiempo de discusión">
+      <Section icono={<Clock className="h-5 w-5" />} titulo="Tiempo por ronda">
         <div className="grid grid-cols-5 gap-2">
           {TIEMPOS.map((t) => {
             const activa = config.duracionSeg === t.seg;
@@ -173,30 +175,56 @@ export function SetupLocal() {
         </div>
       </Section>
 
-      {/* Modo difícil */}
-      <Section icono={<EyeOff className="h-5 w-5" />} titulo="Modo experto">
+      <Section icono={<Trophy className="h-5 w-5" />} titulo="Modo de victoria">
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {MODOS.map((m) => {
+            const activa = config.modoVictoria === m.id;
+            return (
+              <motion.button
+                key={m.id}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setConfig({ modoVictoria: m.id, objetivo: m.def })}
+                className={cn(
+                  "rounded-2xl p-4 text-left border-2 border-[var(--color-borde)] transition",
+                  activa
+                    ? "gradient-primario text-white shadow-[var(--shadow-brutal)]"
+                    : "bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)] active:translate-x-1 active:translate-y-1 active:shadow-none",
+                )}
+              >
+                <div className="font-bold leading-tight">{m.nombre}</div>
+                <div className={cn("text-xs mt-1 leading-snug", activa ? "text-white/80" : "text-[var(--color-tinta-suave)]")}>{m.sub}</div>
+              </motion.button>
+            );
+          })}
+        </div>
         <Card className="p-4">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.impostorCiego}
-              onChange={(e) => setConfig({ impostorCiego: e.target.checked })}
-              className="sr-only peer"
-            />
-            <span className="relative w-12 h-7 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo)] peer-checked:gradient-primario transition-colors">
-              <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white border-2 border-[var(--color-borde)] rounded-full peer-checked:translate-x-5 transition-transform" />
-            </span>
-            <span className="flex-1">
-              <span className="block font-semibold">Impostor a ciegas</span>
-              <span className="block text-sm text-[var(--color-tinta-suave)]">
-                El impostor tampoco ve la categoría.
+          <label className="block">
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-tinta-suave)]">
+                <Target className="h-4 w-4" />
+                {config.modoVictoria === "puntos" ? "Puntos para ganar" : "Cantidad de rondas"}
               </span>
-            </span>
+              <span className="font-mono font-bold text-2xl text-gradient-primario tabular-nums">
+                {config.objetivo}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={modoActivo.min}
+              max={modoActivo.max}
+              step={1}
+              value={config.objetivo}
+              onChange={(e) => setConfig({ objetivo: Number(e.target.value) })}
+              className="w-full accent-[var(--color-primario-500)]"
+            />
+            <div className="flex justify-between text-xs text-[var(--color-tinta-suave)] font-mono mt-1">
+              <span>{modoActivo.min}</span>
+              <span>{modoActivo.max}</span>
+            </div>
           </label>
         </Card>
       </Section>
 
-      {/* CTA fija */}
       <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-4 pt-3 sm:pb-6 bg-gradient-to-t from-[var(--color-fondo)] via-[var(--color-fondo)] to-transparent">
         <div className="mx-auto max-w-2xl">
           <Button

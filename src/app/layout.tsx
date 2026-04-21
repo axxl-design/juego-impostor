@@ -22,8 +22,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Juego del Impostor",
-  description: "Encontrá al impostor entre tus amigos. Multijugador local u online.",
+  title: "VANNY Games Vault",
+  description: "Juegos casuales para pasarla bien con amigos. El Juego del Impostor, ¿Quién Soy? y más.",
 };
 
 export const viewport: Viewport = {

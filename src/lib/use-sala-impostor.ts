@@ -33,7 +33,7 @@ export function useSala(codigo: string, jugadorId: string | null) {
 
   const refrescar = useCallback(async () => {
     try {
-      const r = await fetch(`/api/sala/${codigo}`, { cache: "no-store" });
+      const r = await fetch(`/api/impostor/sala/${codigo}`, { cache: "no-store" });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
         setError(j.error ?? "No se pudo cargar la sala");
@@ -50,7 +50,7 @@ export function useSala(codigo: string, jugadorId: string | null) {
   const refrescarRol = useCallback(async () => {
     if (!jugadorId) return;
     try {
-      const r = await fetch(`/api/sala/${codigo}/rol?jugadorId=${jugadorId}`, { cache: "no-store" });
+      const r = await fetch(`/api/impostor/sala/${codigo}/rol?jugadorId=${jugadorId}`, { cache: "no-store" });
       if (!r.ok) return;
       const j = await r.json();
       setRol(j.rol);
@@ -77,12 +77,12 @@ export function useSala(codigo: string, jugadorId: string | null) {
     if (pusherConfiguradoCliente()) {
       const p = obtenerPusherCliente();
       if (!p) return;
-      const channel = p.subscribe(`sala-${codigo}`);
+      const channel = p.subscribe(`impostor-${codigo}`);
       const handler = (publica: SalaPublica) => setSala(publica);
       channel.bind("estado-actualizado", handler);
       return () => {
         channel.unbind("estado-actualizado", handler);
-        p.unsubscribe(`sala-${codigo}`);
+        p.unsubscribe(`impostor-${codigo}`);
       };
     }
     const id = setInterval(refrescar, 2500);
@@ -91,7 +91,7 @@ export function useSala(codigo: string, jugadorId: string | null) {
 
   const accion = useCallback(
     async (cuerpo: Record<string, unknown>) => {
-      const r = await fetch(`/api/sala/${codigo}/accion`, {
+      const r = await fetch(`/api/impostor/sala/${codigo}/accion`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(cuerpo),
@@ -109,21 +109,21 @@ export function useSala(codigo: string, jugadorId: string | null) {
 
 export function obtenerNombreGuardado(): string {
   if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("impostor.nombre") ?? "";
+  return window.localStorage.getItem("vanny.nombre") ?? "";
 }
 export function guardarNombre(nombre: string) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem("impostor.nombre", nombre.trim().slice(0, 20));
+  window.localStorage.setItem("vanny.nombre", nombre.trim().slice(0, 20));
 }
 export function obtenerJugadorId(codigo: string): string | null {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(`impostor.jugadorId.${codigo}`);
+  return window.localStorage.getItem(`vanny.impostor.jugadorId.${codigo}`);
 }
 export function guardarJugadorId(codigo: string, id: string) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(`impostor.jugadorId.${codigo}`, id);
+  window.localStorage.setItem(`vanny.impostor.jugadorId.${codigo}`, id);
 }
 export function olvidarJugadorId(codigo: string) {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(`impostor.jugadorId.${codigo}`);
+  window.localStorage.removeItem(`vanny.impostor.jugadorId.${codigo}`);
 }

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { cn, formatearTiempo } from "@/lib/utils";
-import type { RolPrivado, SalaPublica } from "@/lib/use-sala";
+import type { RolPrivado, SalaPublica } from "@/lib/use-sala-impostor";
 
 type Props = {
   sala: SalaPublica;

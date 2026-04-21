@@ -7,7 +7,24 @@
       "Bash(npx tsx -e ' *)",
       "Bash(npx tsx *)",
       "Bash(node count-palabras.cjs)",
-      "Bash(node --input-type=module -e ' *)"
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(git mv *)",
+      "Bash(xargs grep *)",
+      "Bash(node -e \"console.log\\(decodeURIComponent\\('Leonardo%20da%20Vinci'\\).normalize\\('NFD'\\).replace\\(/[̀-ͯ]/g,''\\)\\)\")",
+      "Bash(node -e \"console.log\\('Niño'.normalize\\('NFD'\\).replace\\(/[̀-ͯ]/g,''\\)\\)\")",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Read(//c/Users/arand/AppData/Local/Temp/claude/C--Users-arand-juego-impostor/f3bc6694-c30c-48e4-b04d-1f6bbb8e0f7c/tasks/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/quien-soy/local)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/impostor/local)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -L http://localhost:3000/local)",
+      "Bash(curl -s -o /dev/null -w \"redirect status: %{http_code}\\\\nfinal URL: %{url_effective}\\\\n\" http://localhost:3000/local)",
+      "Bash(curl -s -I http://localhost:3000/sala/ABCD)",
+      "Bash(curl -s -I http://localhost:3000/online)",
+      "Bash(xargs -r kill)",
+      "Bash(powershell -NoProfile -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue\")",
+      "Bash(git add *)"
     ]
   }
 }

@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2 } from "lucide-react";
+import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { CATEGORIAS } from "@/lib/palabras";
-import type { Dificultad } from "@/lib/types";
+import type { Dificultad, ModoVictoria } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { olvidarJugadorId } from "@/lib/use-sala-impostor";
+import { olvidarJugadorIdQS } from "@/lib/use-sala-quien-soy";
 import { useRouter } from "next/navigation";
-import type { SalaPublica } from "@/lib/use-sala-impostor";
+import type { SalaQuienSoyPublica } from "@/lib/use-sala-quien-soy";
 
 const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
   { id: "facil", nombre: "Fácil", tono: "from-emerald-400 to-emerald-600" },
@@ -20,27 +20,33 @@ const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
 ];
 
 const TIEMPOS = [
-  { seg: 60, label: "1m" },
+  { seg: 120, label: "2m" },
   { seg: 180, label: "3m" },
   { seg: 300, label: "5m" },
-  { seg: 480, label: "8m" },
+  { seg: 420, label: "7m" },
   { seg: 600, label: "10m" },
 ];
 
+const MODOS: { id: ModoVictoria; nombre: string; sub: string; min: number; max: number; def: number }[] = [
+  { id: "puntos", nombre: "Primero a X puntos", sub: "Gana el primero que llegue", min: 3, max: 20, def: 5 },
+  { id: "rondas", nombre: "X rondas", sub: "Más puntos al final gana", min: 3, max: 15, def: 5 },
+];
+
 type Props = {
-  sala: SalaPublica;
+  sala: SalaQuienSoyPublica;
   jugadorId: string;
   accion: (c: Record<string, unknown>) => Promise<unknown>;
 };
 
-export function LobbyOnline({ sala, jugadorId, accion }: Props) {
+export function LobbyOnlineQuienSoy({ sala, jugadorId, accion }: Props) {
   const router = useRouter();
   const esHost = sala.hostId === jugadorId;
   const [copiado, setCopiado] = useState<"codigo" | "link" | null>(null);
   const [iniciando, setIniciando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const url = typeof window !== "undefined" ? `${window.location.origin}/impostor/sala/${sala.codigo}` : "";
+  const url = typeof window !== "undefined" ? `${window.location.origin}/quien-soy/sala/${sala.codigo}` : "";
+  const modoActivo = MODOS.find((m) => m.id === sala.config.modoVictoria) ?? MODOS[0];
 
   const copiar = async (qué: "codigo" | "link") => {
     const texto = qué === "codigo" ? sala.codigo : url;
@@ -55,7 +61,7 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await (navigator as Navigator & { share: (d: { title: string; text: string; url: string }) => Promise<void> }).share({
-          title: "El Juego del Impostor — VANNY Games Vault",
+          title: "¿Quién Soy? — VANNY Games Vault",
           text: `Unite a mi sala: ${sala.codigo}`,
           url,
         });
@@ -79,18 +85,18 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
 
   const salir = async () => {
     await accion({ tipo: "salir", jugadorId });
-    olvidarJugadorId(sala.codigo);
+    olvidarJugadorIdQS(sala.codigo);
     router.push("/");
   };
 
-  const puedeEmpezar = sala.jugadores.length >= 3;
+  const puedeEmpezar = sala.jugadores.length >= 2 && sala.jugadores.length <= 6;
 
   return (
     <div className="mx-auto max-w-2xl w-full px-4 sm:px-6 pb-28 pt-2 space-y-6">
-      <Card className="p-5 overflow-hidden relative gradient-primario text-white">
+      <Card className="p-5 overflow-hidden relative" style={{ background: "linear-gradient(135deg, #06b6d4 0%, #a855f7 100%)", color: "white" }}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs uppercase tracking-widest opacity-80">Código de sala</div>
+            <div className="text-xs uppercase tracking-widest opacity-80">¿Quién Soy? · Código</div>
             <div className="font-mono font-black text-5xl sm:text-6xl tracking-[0.35em] mt-1">
               {sala.codigo}
             </div>
@@ -124,7 +130,7 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
           <h2 className="font-display font-bold text-xl tracking-tight">
-            Jugadores · {sala.jugadores.length}
+            Jugadores · {sala.jugadores.length}/6
           </h2>
           <button
             onClick={salir}
@@ -162,9 +168,9 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
               </motion.div>
             ))}
           </AnimatePresence>
-          {sala.jugadores.length < 3 && (
+          {sala.jugadores.length < 2 && (
             <div className="text-center text-sm text-[var(--color-tinta-suave)] py-3">
-              Esperando más jugadores... (mínimo 3)
+              Esperando más jugadores... (mínimo 2)
             </div>
           )}
         </Card>
@@ -222,7 +228,7 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
       </section>
 
       <section>
-        <h2 className="font-display font-bold text-xl tracking-tight mb-3 px-1">Tiempo</h2>
+        <h2 className="font-display font-bold text-xl tracking-tight mb-3 px-1">Tiempo por ronda</h2>
         <div className="grid grid-cols-5 gap-2">
           {TIEMPOS.map((t) => {
             const activa = sala.config.duracionSeg === t.seg;
@@ -247,30 +253,54 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
       </section>
 
       <section>
+        <h2 className="font-display font-bold text-xl tracking-tight mb-3 px-1">Modo de victoria</h2>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {MODOS.map((m) => {
+            const activa = sala.config.modoVictoria === m.id;
+            return (
+              <button
+                key={m.id}
+                disabled={!esHost}
+                onClick={() => accion({ tipo: "configurar", jugadorId, config: { modoVictoria: m.id, objetivo: m.def } })}
+                className={cn(
+                  "rounded-2xl p-4 text-left border-2 border-[var(--color-borde)] transition",
+                  activa
+                    ? "gradient-primario text-white shadow-[var(--shadow-brutal)]"
+                    : "bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)]",
+                  !esHost && "opacity-70",
+                )}
+              >
+                <div className="font-bold leading-tight">{m.nombre}</div>
+                <div className={cn("text-xs mt-1 leading-snug", activa ? "text-white/80" : "text-[var(--color-tinta-suave)]")}>{m.sub}</div>
+              </button>
+            );
+          })}
+        </div>
         <Card className="p-4">
-          <label className={cn("flex items-center gap-3", esHost ? "cursor-pointer" : "opacity-70")}>
-            <input
-              type="checkbox"
-              disabled={!esHost}
-              checked={sala.config.impostorCiego}
-              onChange={(e) =>
-                accion({
-                  tipo: "configurar",
-                  jugadorId,
-                  config: { impostorCiego: e.target.checked },
-                })
-              }
-              className="sr-only peer"
-            />
-            <span className="relative w-12 h-7 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo)] peer-checked:gradient-primario transition-colors">
-              <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white border-2 border-[var(--color-borde)] rounded-full peer-checked:translate-x-5 transition-transform" />
-            </span>
-            <span className="flex-1">
-              <span className="block font-semibold">Impostor a ciegas</span>
-              <span className="block text-sm text-[var(--color-tinta-suave)]">
-                El impostor tampoco ve la categoría.
+          <label className="block">
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-tinta-suave)]">
+                <Target className="h-4 w-4" />
+                {sala.config.modoVictoria === "puntos" ? "Puntos para ganar" : "Cantidad de rondas"}
               </span>
-            </span>
+              <span className="font-mono font-bold text-2xl text-gradient-primario tabular-nums">
+                {sala.config.objetivo}
+              </span>
+            </div>
+            <input
+              type="range"
+              disabled={!esHost}
+              min={modoActivo.min}
+              max={modoActivo.max}
+              step={1}
+              value={sala.config.objetivo}
+              onChange={(e) => accion({ tipo: "configurar", jugadorId, config: { objetivo: Number(e.target.value) } })}
+              className="w-full accent-[var(--color-primario-500)] disabled:opacity-60"
+            />
+            <div className="flex justify-between text-xs text-[var(--color-tinta-suave)] font-mono mt-1">
+              <span>{modoActivo.min}</span>
+              <span>{modoActivo.max}</span>
+            </div>
           </label>
         </Card>
       </section>
