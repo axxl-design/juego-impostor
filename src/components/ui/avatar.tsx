@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { colorAvatar, iniciales } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
-export function Avatar({
+function AvatarBase({
   nombre,
   tamano = 40,
   className,
@@ -31,3 +32,5 @@ export function Avatar({
     </div>
   );
 }
+
+export const Avatar = memo(AvatarBase);

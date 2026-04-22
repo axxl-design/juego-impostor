@@ -25,18 +25,6 @@ Uno de los jugadores es el impostor secreto: los demás saben una palabra (por e
 - 💬 **Preguntas sugeridas** · Panel plegable con preguntas neutras para romper el hielo.
 - 👑 **Jefe Final cada 5 rondas** · Ronda especial con 2 impostores, categoría Mezcla total y puntaje x2. Requiere Puntaje persistente.
 
-### 🎴 VANNY Deal
-Juego de cartas multijugador inspirado en Monopoly Deal, ambientado en el universo VANNY. Cada turno **robás 2 cartas, jugás hasta 3**, y descartás si quedás con más de 7 en la mano. Ganás al completar 3 sets de colores distintos (modo Clásico) o 2 (modo Rápido).
-
-- **2-5 jugadores · Solo online · 2 modos**
-- **Mazo de 91 cartas** — 28 propiedades en 10 grupos de colores + 2 servicios, 20 cartas de dinero, 33 cartas de acción (15 tipos distintos), 3 Casas, 2 Torres, 8 comodines bicolor y 2 arcoíris.
-- **Condiciones de victoria configurables:** 3 sets, 2 sets, por tiempo (15 min, gana mayor valor en mesa+banco), o por valor total en millones.
-- **Tiempo por turno configurable:** 30/60/90s o sin límite.
-- **15 cartas especiales** (todas adaptadas con temática VANNY): Renta Universal, Renta Bicolor, Cumpleaños VANNY, Impuesto Imperial, ¡Pasá Conmigo!, Robo Selectivo, Intercambio Forzado, Asalto al Monopolio, No Gracias (con cascadas de NG sobre NG), Casa/Torre, Espionaje (ver mano ajena 10s), Auditoría Fiscal, Megáfono Viral (duplica próxima acción), Juicio Popular (votación 15s).
-- **Reconexión con localStorage:** si se te corta, volvés a entrar al mismo link y seguís. Si el host se va, otro jugador asume el rol.
-- **Toda la lógica corre en servidor:** cliente solo emite intenciones, servidor valida turno, carta, pago, idempotencia por actionId.
-- **Estilo visual comic/cartoon** en las cartas: bordes gruesos, sombras duras, emojis grandes, paleta viva por tipo.
-
 ### ❓ ¿Quién Soy?
 Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse preguntas cara a cara o por chat externo y traten de adivinar lo que tiene el otro.
 
@@ -51,19 +39,6 @@ Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse pr
 - 🛡️ **Escudo comprable** · Con 5+ pts podés comprar un escudo por 2 pts. Evita el próximo fallo.
 
 ---
-
-## En desarrollo / Pausado
-
-### 🌍 Vidas
-RPG narrativo de vida entera (3 mundos, 1-2 jugadores, local + online con IA opcional). El prototipo está hecho pero pausado para liberar bundle y enfocar el trabajo en otros juegos.
-
-El código completo vive en `src/_paused/vidas/` — Next.js ignora carpetas con prefijo `_`, y `tsconfig.json` excluye `src/_paused/**` del type-check. Para retomar el juego:
-
-1. Mover `src/_paused/vidas/app/vidas` → `src/app/vidas`
-2. Mover `src/_paused/vidas/api/vidas` → `src/app/api/vidas`
-3. Mover `src/_paused/vidas/lib/*` → `src/lib/`
-4. Mover `src/_paused/vidas/components/vidas` → `src/components/vidas`
-5. Reagregar la card en `src/app/page.tsx` y reactivar la sección en este README.
 
 ### Sistema de pistas: enriquecer palabras
 
@@ -206,17 +181,9 @@ src/app/
     local/                       # ¿Quién Soy? en un dispositivo
     online/
     sala/[codigo]/
-  vanny-deal/
-    page.tsx                     # Landing del juego de cartas
-    sala/[codigo]/               # Sala online (lobby + mesa + overlays)
   api/
     impostor/sala/...            # API del impostor
     quien-soy/sala/...           # API de ¿Quién Soy?
-    vanny-deal/
-      sala/crear                 # POST crear sala
-      sala/[codigo]              # GET estado público
-      sala/[codigo]/mano         # GET mano privada (por jugadorId)
-      sala/[codigo]/accion       # POST acciones (dispatch de todo)
 src/components/
   juego/                         # Componentes del impostor (local)
   online/                        # Componentes del impostor (online)
@@ -225,17 +192,6 @@ src/components/
 src/lib/
   palabras.ts                    # Las 15 categorías con palabras (compartido)
   utils.ts                       # Helpers + esMismaPalabra (fuzzy match)
-  vanny-deal/                    # Motor del juego de cartas
-    types.ts                     # Todos los tipos del juego
-    colores.ts                   # 10 grupos de colores + 2 servicios, rentas
-    mazo.ts                      # Construcción del mazo (91 cartas)
-    utils.ts                     # Helpers (renta, sets completos, shuffle determinista)
-    motor.ts                     # Acciones base (lobby, jugar propiedad/dinero, pagar, etc.)
-    acciones.ts                  # 15 cartas especiales + No Gracias en cascada + Juicio + Espionaje
-  sala-store-vanny-deal.ts       # Persistencia (Upstash) + dispatch de acciones
-  use-sala-vanny-deal.ts         # Hook cliente (Pusher + polling + mano privada)
-src/_paused/                     # Código pausado, NO compila (excluido en tsconfig)
-  vidas/                         # RPG narrativo, listo para retomar
 ```
 
 Las rutas viejas (`/local`, `/online`, `/sala/:codigo`) redirigen automáticamente a `/impostor/...`.

@@ -9,7 +9,10 @@ import { useJuegoLocal } from "@/lib/store-local-impostor";
 import { PoderCard } from "@/components/juego/poder-card";
 
 export function RepartoLocal() {
-  const { jugadores, indiceReparto, ronda, avanzarReparto } = useJuegoLocal();
+  const jugadores = useJuegoLocal((s) => s.jugadores);
+  const indiceReparto = useJuegoLocal((s) => s.indiceReparto);
+  const ronda = useJuegoLocal((s) => s.ronda);
+  const avanzarReparto = useJuegoLocal((s) => s.avanzarReparto);
   const [revelado, setRevelado] = useState(false);
 
   if (!ronda) return null;

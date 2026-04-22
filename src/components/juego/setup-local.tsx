@@ -28,15 +28,13 @@ const TIEMPOS = [
 ];
 
 export function SetupLocal() {
-  const {
-    jugadores,
-    config,
-    agregarJugador,
-    quitarJugador,
-    setConfig,
-    setReglasExtra,
-    iniciarPartida,
-  } = useJuegoLocal();
+  const jugadores = useJuegoLocal((s) => s.jugadores);
+  const config = useJuegoLocal((s) => s.config);
+  const agregarJugador = useJuegoLocal((s) => s.agregarJugador);
+  const quitarJugador = useJuegoLocal((s) => s.quitarJugador);
+  const setConfig = useJuegoLocal((s) => s.setConfig);
+  const setReglasExtra = useJuegoLocal((s) => s.setReglasExtra);
+  const iniciarPartida = useJuegoLocal((s) => s.iniciarPartida);
   const [nombre, setNombre] = useState("");
 
   const puedeEmpezar = jugadores.length >= 3;

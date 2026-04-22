@@ -25,15 +25,13 @@ const MODOS: { id: ModoVictoria; nombre: string; sub: string; min: number; max: 
 ];
 
 export function SetupLocalQuienSoy() {
-  const {
-    jugadores,
-    config,
-    agregarJugador,
-    quitarJugador,
-    setConfig,
-    setReglasExtra,
-    iniciarPartida,
-  } = useJuegoQuienSoyLocal();
+  const jugadores = useJuegoQuienSoyLocal((s) => s.jugadores);
+  const config = useJuegoQuienSoyLocal((s) => s.config);
+  const agregarJugador = useJuegoQuienSoyLocal((s) => s.agregarJugador);
+  const quitarJugador = useJuegoQuienSoyLocal((s) => s.quitarJugador);
+  const setConfig = useJuegoQuienSoyLocal((s) => s.setConfig);
+  const setReglasExtra = useJuegoQuienSoyLocal((s) => s.setReglasExtra);
+  const iniciarPartida = useJuegoQuienSoyLocal((s) => s.iniciarPartida);
   const [nombre, setNombre] = useState("");
 
   const puedeEmpezar = jugadores.length >= 2 && jugadores.length <= 6;

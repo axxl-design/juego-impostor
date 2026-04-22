@@ -12,19 +12,17 @@ import { cn } from "@/lib/utils";
 import { lanzarConfetti } from "@/lib/confetti";
 
 export function JuegoLocalQuienSoy() {
-  const {
-    jugadores,
-    config,
-    rondaActual,
-    pistasUsadas,
-    ultimaAdivinanza,
-    ganadorPendiente,
-    intentarAdivinanza,
-    pedirPista,
-    comprarEscudo,
-    terminarPartida,
-    siguienteRonda,
-  } = useJuegoQuienSoyLocal();
+  const jugadores = useJuegoQuienSoyLocal((s) => s.jugadores);
+  const config = useJuegoQuienSoyLocal((s) => s.config);
+  const rondaActual = useJuegoQuienSoyLocal((s) => s.rondaActual);
+  const pistasUsadas = useJuegoQuienSoyLocal((s) => s.pistasUsadas);
+  const ultimaAdivinanza = useJuegoQuienSoyLocal((s) => s.ultimaAdivinanza);
+  const ganadorPendiente = useJuegoQuienSoyLocal((s) => s.ganadorPendiente);
+  const intentarAdivinanza = useJuegoQuienSoyLocal((s) => s.intentarAdivinanza);
+  const pedirPista = useJuegoQuienSoyLocal((s) => s.pedirPista);
+  const comprarEscudo = useJuegoQuienSoyLocal((s) => s.comprarEscudo);
+  const terminarPartida = useJuegoQuienSoyLocal((s) => s.terminarPartida);
+  const siguienteRonda = useJuegoQuienSoyLocal((s) => s.siguienteRonda);
 
   const [deId, setDeId] = useState<string>(jugadores[0]?.id ?? "");
   const [aId, setAId] = useState<string>(jugadores[1]?.id ?? "");
@@ -239,14 +237,14 @@ export function JuegoLocalQuienSoy() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 overflow-y-auto"
+            className="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0.6, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="w-full max-w-sm"
+              className="w-full max-w-sm my-auto"
             >
               <Card
                 className="p-6 text-center text-white overflow-hidden relative"
@@ -354,7 +352,11 @@ export function JuegoLocalQuienSoy() {
 }
 
 export function FinLocalQuienSoy() {
-  const { jugadores, ganador, config, jugarOtraVez, volverAConfig } = useJuegoQuienSoyLocal();
+  const jugadores = useJuegoQuienSoyLocal((s) => s.jugadores);
+  const ganador = useJuegoQuienSoyLocal((s) => s.ganador);
+  const config = useJuegoQuienSoyLocal((s) => s.config);
+  const jugarOtraVez = useJuegoQuienSoyLocal((s) => s.jugarOtraVez);
+  const volverAConfig = useJuegoQuienSoyLocal((s) => s.volverAConfig);
   const ranking = [...jugadores].sort((a, b) => b.puntos - a.puntos);
 
   useEffect(() => {

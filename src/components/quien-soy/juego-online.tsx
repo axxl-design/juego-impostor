@@ -374,14 +374,14 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 overflow-y-auto"
+            className="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0.6, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="w-full max-w-sm"
+              className="w-full max-w-sm my-auto"
             >
               <Card
                 className="p-6 text-center text-white overflow-hidden relative"

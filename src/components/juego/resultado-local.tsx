@@ -12,7 +12,13 @@ import { lanzarConfetti } from "@/lib/confetti";
 import { cn } from "@/lib/utils";
 
 export function ResultadoLocal() {
-  const { resultado, ronda, jugadores, config, reiniciarRonda, volverAConfig, resetearPuntajes } = useJuegoLocal();
+  const resultado = useJuegoLocal((s) => s.resultado);
+  const ronda = useJuegoLocal((s) => s.ronda);
+  const jugadores = useJuegoLocal((s) => s.jugadores);
+  const config = useJuegoLocal((s) => s.config);
+  const reiniciarRonda = useJuegoLocal((s) => s.reiniciarRonda);
+  const volverAConfig = useJuegoLocal((s) => s.volverAConfig);
+  const resetearPuntajes = useJuegoLocal((s) => s.resetearPuntajes);
 
   useEffect(() => {
     if (resultado && !resultado.ganaImpostor) {

@@ -9,7 +9,12 @@ import { useJuegoQuienSoyLocal } from "@/lib/store-local-quien-soy";
 import { buscarCategoria } from "@/lib/palabras";
 
 export function RepartoLocalQuienSoy() {
-  const { jugadores, indiceReparto, config, avanzarReparto, marcarVisto, rondaActual } = useJuegoQuienSoyLocal();
+  const jugadores = useJuegoQuienSoyLocal((s) => s.jugadores);
+  const indiceReparto = useJuegoQuienSoyLocal((s) => s.indiceReparto);
+  const config = useJuegoQuienSoyLocal((s) => s.config);
+  const avanzarReparto = useJuegoQuienSoyLocal((s) => s.avanzarReparto);
+  const marcarVisto = useJuegoQuienSoyLocal((s) => s.marcarVisto);
+  const rondaActual = useJuegoQuienSoyLocal((s) => s.rondaActual);
   const [revelado, setRevelado] = useState(false);
 
   const jugador = jugadores[indiceReparto];

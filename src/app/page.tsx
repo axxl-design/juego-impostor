@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles, VenetianMask, HelpCircle, Lock } from "lucide-react";
-
-const EMOJI_CARD_DEAL = "🎴";
 import { Header } from "@/components/header";
 
 export default function Hub() {
@@ -33,7 +31,7 @@ export default function Hub() {
             </p>
           </motion.div>
 
-          <div className="mt-10 sm:mt-16 grid gap-6 sm:gap-8 md:grid-cols-3">
+          <div className="mt-10 sm:mt-16 grid gap-6 sm:gap-8 md:grid-cols-2">
             <JuegoCard
               href="/impostor/local"
               hrefSecundario="/impostor/online"
@@ -55,19 +53,6 @@ export default function Hub() {
               icono={<HelpCircle className="h-8 w-8" />}
               variante="cian"
               delay={0.2}
-            />
-            <JuegoCard
-              href="/vanny-deal"
-              hrefSecundario="/vanny-deal"
-              titulo="VANNY Deal"
-              tagline="Estratega el caos."
-              descripcion="Conquistá el mapa de VANNY con propiedades, traiciones y cartas inesperadas. Basado en Monopoly Deal."
-              meta="2-5 jugadores · Online · 2 modos"
-              icono={<span className="text-3xl leading-none">{EMOJI_CARD_DEAL}</span>}
-              variante="acento"
-              labelPrimario="Crear sala"
-              labelSecundario="Unirse con código"
-              delay={0.3}
             />
           </div>
 

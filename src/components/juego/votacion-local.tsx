@@ -10,7 +10,12 @@ import { useJuegoLocal } from "@/lib/store-local-impostor";
 import { cn } from "@/lib/utils";
 
 export function VotacionLocal() {
-  const { jugadores, votos, ronda, registrarVoto, cerrarVotacion, usarPoderVidente } = useJuegoLocal();
+  const jugadores = useJuegoLocal((s) => s.jugadores);
+  const votos = useJuegoLocal((s) => s.votos);
+  const ronda = useJuegoLocal((s) => s.ronda);
+  const registrarVoto = useJuegoLocal((s) => s.registrarVoto);
+  const cerrarVotacion = useJuegoLocal((s) => s.cerrarVotacion);
+  const usarPoderVidente = useJuegoLocal((s) => s.usarPoderVidente);
   const [votanteIdx, setVotanteIdx] = useState(0);
   const [vision, setVision] = useState<{ observadoNombre: string; votadoNombre: string } | null>(null);
   const votante = jugadores[votanteIdx];

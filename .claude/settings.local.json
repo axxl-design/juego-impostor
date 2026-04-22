@@ -30,7 +30,12 @@
       "Bash(sort -k5 -n -r)",
       "Bash(npx next *)",
       "Bash(grep -c \"pusher\" .next/static/chunks/0-vslesd9h1oy.js)",
-      "Bash(grep -c \"Pusher\" .next/static/chunks/0-vslesd9h1oy.js)"
+      "Bash(grep -c \"Pusher\" .next/static/chunks/0-vslesd9h1oy.js)",
+      "Bash(rm -rf C:/Users/arand/juego-impostor/src/_paused)",
+      "Bash(rm -rf C:/Users/arand/juego-impostor/src/app/vanny-deal)",
+      "Bash(rm -rf C:/Users/arand/juego-impostor/src/app/api/vanny-deal)",
+      "Bash(rm -rf C:/Users/arand/juego-impostor/src/lib/vanny-deal)",
+      "Bash(rm -f C:/Users/arand/juego-impostor/src/lib/sala-store-vanny-deal.ts)"
     ]
   }
 }

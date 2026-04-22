@@ -12,17 +12,15 @@ import { formatearTiempo } from "@/lib/utils";
 import { preguntasAleatorias } from "@/lib/preguntas-impostor";
 
 export function TemporizadorPantalla() {
-  const {
-    finEn,
-    irAVotacion,
-    config,
-    jugadores,
-    ronda,
-    intentarAdivinanzaImpostor,
-    pedirPistaImpostor,
-    pedirContextoCivil,
-    activarDobleAgente,
-  } = useJuegoLocal();
+  const finEn = useJuegoLocal((s) => s.finEn);
+  const irAVotacion = useJuegoLocal((s) => s.irAVotacion);
+  const config = useJuegoLocal((s) => s.config);
+  const jugadores = useJuegoLocal((s) => s.jugadores);
+  const ronda = useJuegoLocal((s) => s.ronda);
+  const intentarAdivinanzaImpostor = useJuegoLocal((s) => s.intentarAdivinanzaImpostor);
+  const pedirPistaImpostor = useJuegoLocal((s) => s.pedirPistaImpostor);
+  const pedirContextoCivil = useJuegoLocal((s) => s.pedirContextoCivil);
+  const activarDobleAgente = useJuegoLocal((s) => s.activarDobleAgente);
   const [restante, setRestante] = useState(config.duracionSeg);
   const [fase, setFase] = useState<"oculto" | "eligiendo" | "escribiendo" | "pista" | "contexto" | "dobleAgente">("oculto");
   const [pistaJugadorId, setPistaJugadorId] = useState<string | null>(null);
