@@ -80,6 +80,41 @@ export function ReglasModal({ abierto, onCerrar }: Props) {
                 de puntos o quien tenga más al terminar las rondas.</p>
               </Seccion>
 
+              <Seccion titulo="🎴 VANNY Deal">
+                <p>
+                  Juego de cartas multijugador (2-5 jugadores). Cada turno: <strong>robá 2 cartas → jugá hasta 3 cartas → descartá si te quedan más de 7</strong>.
+                  Las cartas pueden ir a tu <em>mesa</em> (propiedades), a tu <em>banco</em> (dinero) o jugarse como <em>acción</em>.
+                  Ganás al completar <strong>3 sets de colores distintos</strong> (modo Clásico) o <strong>2 sets</strong> (modo Rápido).
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-widest text-[var(--color-tinta-suave)]">Modos</p>
+                <ul className="mt-1 space-y-1 text-[var(--color-tinta-suave)]">
+                  <li><strong>Clásico</strong> — 3 sets para ganar.</li>
+                  <li><strong>Rápido</strong> — 2 sets (partidas 8-15 min).</li>
+                </ul>
+                <p className="mt-2 text-xs uppercase tracking-widest text-[var(--color-tinta-suave)]">Condiciones de victoria</p>
+                <ul className="mt-1 space-y-1 text-[var(--color-tinta-suave)]">
+                  <li>Por sets (3 o 2), por tiempo (15 min, gana mayor valor mesa+banco), o por valor en millones.</li>
+                </ul>
+                <p className="mt-3 text-xs uppercase tracking-widest text-[var(--color-tinta-suave)]">Cartas especiales (15 tipos)</p>
+                <ul className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 text-[var(--color-tinta-suave)] text-[12px]">
+                  <li>💰 <strong>Renta Universal</strong> — cobrás renta a 1 rival.</li>
+                  <li>🎯 <strong>Renta Bicolor</strong> — renta a TODOS en 1 de 2 colores.</li>
+                  <li>🎂 <strong>Cumpleaños VANNY</strong> — cada uno te da $2M.</li>
+                  <li>👑 <strong>Impuesto Imperial</strong> — 1 rival te paga $5M.</li>
+                  <li>🃏 <strong>¡Pasá Conmigo!</strong> — robás 2 cartas extra.</li>
+                  <li>🦹 <strong>Robo Selectivo</strong> — 1 propiedad ajena (no de set completo).</li>
+                  <li>🔄 <strong>Intercambio Forzado</strong> — 1 x 1 propiedad.</li>
+                  <li>💣 <strong>Asalto al Monopolio</strong> — robás 1 set COMPLETO.</li>
+                  <li>🛡️ <strong>No, Gracias</strong> — anula un ataque contra vos.</li>
+                  <li>🏠 <strong>Casa</strong> — +$3M a un set completo.</li>
+                  <li>🏢 <strong>Torre</strong> — +$4M a un set con Casa.</li>
+                  <li>🕵️ <strong>Espionaje</strong> — ves la mano ajena 10s.</li>
+                  <li>💼 <strong>Auditoría Fiscal</strong> — 1 rival paga $1M por propiedad.</li>
+                  <li>📢 <strong>Megáfono Viral</strong> — duplica la próxima acción.</li>
+                  <li>⚖️ <strong>Juicio Popular</strong> — veredicto por votación (15s).</li>
+                </ul>
+              </Seccion>
+
               <Divisor />
 
               <Seccion titulo="Reglas extra del Impostor (opcionales)">

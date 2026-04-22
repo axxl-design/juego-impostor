@@ -25,18 +25,17 @@ Uno de los jugadores es el impostor secreto: los demás saben una palabra (por e
 - 💬 **Preguntas sugeridas** · Panel plegable con preguntas neutras para romper el hielo.
 - 👑 **Jefe Final cada 5 rondas** · Ronda especial con 2 impostores, categoría Mezcla total y puntaje x2. Requiere Puntaje persistente.
 
-### 🌍 Vidas
-RPG narrativo de vida entera. Elegís un mundo, un rol, un nombre, y vivís desde los 18 años hasta la muerte tomando decisiones sobre cartas. Cada decisión mueve stats (karma, influencia, riqueza, salud) y cambia tu rango social. El final es un epílogo personalizado con highlights de tu vida.
+### 🎴 VANNY Deal
+Juego de cartas multijugador inspirado en Monopoly Deal, ambientado en el universo VANNY. Cada turno **robás 2 cartas, jugás hasta 3**, y descartás si quedás con más de 7 en la mano. Ganás al completar 3 sets de colores distintos (modo Clásico) o 2 (modo Rápido).
 
-- **3 mundos · 1-2 jugadores · Local + Online**
-- **Mundos del prototipo:** Reino Medieval 🏰, Mundo Actual 🌆, Mundo con Poderes ⚡. (Próximos: Japón feudal, Antigua Grecia, Futuro distópico, Colonia espacial, Post-apocalíptico.)
-- **Roles por mundo:** 5 opciones, cada una con stats iniciales y punto de partida distinto.
-- **Etapas de vida:** Juventud (18-35), Madurez (36-60), Vejez (60-95). Las cartas varían según etapa. La muerte puede llegar por salud 0 o por edad.
-- **Modo local:** guarda automáticamente en `localStorage`. Podés tener varias vidas abiertas, cerrar, y volver después.
-- **Modo 2 jugadores:** mismo mundo, roles posiblemente distintos, turnos alternados. Cada uno tiene stats propios y comparten un **Vínculo** (0-100) que sube si las decisiones cuidan a la relación. Al crear la sala el host elige si la relación es "Amigos" o "Pareja" — el tono se adapta y se intercalan cartas románticas extras.
-- **Sin magia.** El mundo de Poderes usa habilidades biológicas, tecnología implantada y entrenamiento extremo. Nunca hechizos.
-- **Cartas banqueadas:** hay un banco local de ~120 cartas curadas que garantiza que el juego funciona sin conexión a IA. Cada carta tiene 4 opciones moralmente grises con trade-offs reales.
-- **Botón "Situación IA" (opcional):** llama a Claude Haiku 4.5 para generar una carta personalizada en base a tu mundo, rol, stats, últimas decisiones y tipo de relación. Máx 5 usos por partida. Requiere `ANTHROPIC_API_KEY` — sin ella, el juego corre perfecto con el banco hardcodeado y el botón muestra un mensaje amigable. Ver la sección 5 de este README.
+- **2-5 jugadores · Solo online · 2 modos**
+- **Mazo de 91 cartas** — 28 propiedades en 10 grupos de colores + 2 servicios, 20 cartas de dinero, 33 cartas de acción (15 tipos distintos), 3 Casas, 2 Torres, 8 comodines bicolor y 2 arcoíris.
+- **Condiciones de victoria configurables:** 3 sets, 2 sets, por tiempo (15 min, gana mayor valor en mesa+banco), o por valor total en millones.
+- **Tiempo por turno configurable:** 30/60/90s o sin límite.
+- **15 cartas especiales** (todas adaptadas con temática VANNY): Renta Universal, Renta Bicolor, Cumpleaños VANNY, Impuesto Imperial, ¡Pasá Conmigo!, Robo Selectivo, Intercambio Forzado, Asalto al Monopolio, No Gracias (con cascadas de NG sobre NG), Casa/Torre, Espionaje (ver mano ajena 10s), Auditoría Fiscal, Megáfono Viral (duplica próxima acción), Juicio Popular (votación 15s).
+- **Reconexión con localStorage:** si se te corta, volvés a entrar al mismo link y seguís. Si el host se va, otro jugador asume el rol.
+- **Toda la lógica corre en servidor:** cliente solo emite intenciones, servidor valida turno, carta, pago, idempotencia por actionId.
+- **Estilo visual comic/cartoon** en las cartas: bordes gruesos, sombras duras, emojis grandes, paleta viva por tipo.
 
 ### ❓ ¿Quién Soy?
 Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse preguntas cara a cara o por chat externo y traten de adivinar lo que tiene el otro.
@@ -50,6 +49,21 @@ Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse pr
 
 - 💡 **Pistas** · Cada jugador puede pedir hasta 3 pistas sobre su propia palabra. Cada una cuesta 1 pt (mín 1 pt para pedirla).
 - 🛡️ **Escudo comprable** · Con 5+ pts podés comprar un escudo por 2 pts. Evita el próximo fallo.
+
+---
+
+## En desarrollo / Pausado
+
+### 🌍 Vidas
+RPG narrativo de vida entera (3 mundos, 1-2 jugadores, local + online con IA opcional). El prototipo está hecho pero pausado para liberar bundle y enfocar el trabajo en otros juegos.
+
+El código completo vive en `src/_paused/vidas/` — Next.js ignora carpetas con prefijo `_`, y `tsconfig.json` excluye `src/_paused/**` del type-check. Para retomar el juego:
+
+1. Mover `src/_paused/vidas/app/vidas` → `src/app/vidas`
+2. Mover `src/_paused/vidas/api/vidas` → `src/app/api/vidas`
+3. Mover `src/_paused/vidas/lib/*` → `src/lib/`
+4. Mover `src/_paused/vidas/components/vidas` → `src/components/vidas`
+5. Reagregar la card en `src/app/page.tsx` y reactivar la sección en este README.
 
 ### Sistema de pistas: enriquecer palabras
 
@@ -179,36 +193,6 @@ Listo. Ahora las salas viven en Redis y funcionan entre todas las instancias. El
 
 ---
 
-## 5. Configurar IA para el juego Vidas (opcional)
-
-El juego Vidas funciona completo con el banco de cartas hardcodeado. La API key de Anthropic solo se necesita para el botón **"Situación IA"** que genera cartas personalizadas en base al estado del jugador. Sin la key, ese botón devuelve un mensaje claro y el juego sigue normalmente.
-
-### 5.1. Conseguir la API key
-
-1. Entrá a [console.anthropic.com](https://console.anthropic.com) y creá cuenta (sirve Google).
-2. Andá a **API Keys** y hacé clic en **Create Key**.
-3. Copiala (formato: `sk-ant-...`). Una vez que cerrás la ventana, no la podés ver de nuevo.
-
-### 5.2. Pegarla en el proyecto
-
-Agregá al archivo `.env.local`:
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Reiniciá el server (`Ctrl+C` y `npm run dev` de nuevo).
-
-### 5.3. Agregarla en Vercel
-
-En **Settings → Environment Variables** agregá `ANTHROPIC_API_KEY` con el mismo valor. Redeploy.
-
-### Modelo
-
-El juego usa `claude-haiku-4-5-20251001` (el modelo más chico y rápido de Claude 4). El prompt incluye mundo, rol, etapa, stats actuales y las últimas 3 decisiones del jugador, y pide JSON estricto. Se validan opciones y efectos antes de servir la carta al cliente.
-
----
-
 ## Estructura
 
 ```
@@ -222,20 +206,17 @@ src/app/
     local/                       # ¿Quién Soy? en un dispositivo
     online/
     sala/[codigo]/
-  vidas/
-    page.tsx                     # Hub del juego Vidas
-    local/                       # Saves locales + nueva vida
-    online/                      # Crear/entrar sala
-    sala/[codigo]/               # Sala 2P con lobby y juego
+  vanny-deal/
+    page.tsx                     # Landing del juego de cartas
+    sala/[codigo]/               # Sala online (lobby + mesa + overlays)
   api/
     impostor/sala/...            # API del impostor
     quien-soy/sala/...           # API de ¿Quién Soy?
-    vidas/
-      sala/crear                 # Crear sala 2P
-      sala/[codigo]              # GET estado
-      sala/[codigo]/accion       # POST acciones
-      sala/[codigo]/generar      # POST generar carta IA (online)
-      generar                    # POST generar carta IA (local)
+    vanny-deal/
+      sala/crear                 # POST crear sala
+      sala/[codigo]              # GET estado público
+      sala/[codigo]/mano         # GET mano privada (por jugadorId)
+      sala/[codigo]/accion       # POST acciones (dispatch de todo)
 src/components/
   juego/                         # Componentes del impostor (local)
   online/                        # Componentes del impostor (online)
@@ -244,6 +225,17 @@ src/components/
 src/lib/
   palabras.ts                    # Las 15 categorías con palabras (compartido)
   utils.ts                       # Helpers + esMismaPalabra (fuzzy match)
+  vanny-deal/                    # Motor del juego de cartas
+    types.ts                     # Todos los tipos del juego
+    colores.ts                   # 10 grupos de colores + 2 servicios, rentas
+    mazo.ts                      # Construcción del mazo (91 cartas)
+    utils.ts                     # Helpers (renta, sets completos, shuffle determinista)
+    motor.ts                     # Acciones base (lobby, jugar propiedad/dinero, pagar, etc.)
+    acciones.ts                  # 15 cartas especiales + No Gracias en cascada + Juicio + Espionaje
+  sala-store-vanny-deal.ts       # Persistencia (Upstash) + dispatch de acciones
+  use-sala-vanny-deal.ts         # Hook cliente (Pusher + polling + mano privada)
+src/_paused/                     # Código pausado, NO compila (excluido en tsconfig)
+  vidas/                         # RPG narrativo, listo para retomar
 ```
 
 Las rutas viejas (`/local`, `/online`, `/sala/:codigo`) redirigen automáticamente a `/impostor/...`.

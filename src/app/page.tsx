@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, VenetianMask, HelpCircle, Lock, Globe2 } from "lucide-react";
+import { Sparkles, VenetianMask, HelpCircle, Lock } from "lucide-react";
+
+const EMOJI_CARD_DEAL = "🎴";
 import { Header } from "@/components/header";
 
 export default function Hub() {
@@ -31,7 +33,7 @@ export default function Hub() {
             </p>
           </motion.div>
 
-          <div className="mt-10 sm:mt-16 grid gap-6 sm:gap-8 md:grid-cols-2">
+          <div className="mt-10 sm:mt-16 grid gap-6 sm:gap-8 md:grid-cols-3">
             <JuegoCard
               href="/impostor/local"
               hrefSecundario="/impostor/online"
@@ -54,19 +56,19 @@ export default function Hub() {
               variante="cian"
               delay={0.2}
             />
-            <div className="md:col-span-2">
-              <JuegoCard
-                href="/vidas/local"
-                hrefSecundario="/vidas/online"
-                titulo="Vidas 🌍"
-                tagline="Elegí un mundo, un rol, y viví tu historia."
-                descripcion="Cada decisión cuenta. Una vida entera en cartas: medieval, mundo actual o con poderes. Solo o con alguien."
-                meta="3 mundos · 1-2 jugadores · Narrativo con IA"
-                icono={<Globe2 className="h-8 w-8" />}
-                variante="cian"
-                delay={0.3}
-              />
-            </div>
+            <JuegoCard
+              href="/vanny-deal"
+              hrefSecundario="/vanny-deal"
+              titulo="VANNY Deal"
+              tagline="Estratega el caos."
+              descripcion="Conquistá el mapa de VANNY con propiedades, traiciones y cartas inesperadas. Basado en Monopoly Deal."
+              meta="2-5 jugadores · Online · 2 modos"
+              icono={<span className="text-3xl leading-none">{EMOJI_CARD_DEAL}</span>}
+              variante="acento"
+              labelPrimario="Crear sala"
+              labelSecundario="Unirse con código"
+              delay={0.3}
+            />
           </div>
 
           <motion.div
@@ -106,6 +108,8 @@ function JuegoCard({
   icono,
   variante,
   delay,
+  labelPrimario = "Jugar local",
+  labelSecundario = "Jugar online",
 }: {
   href: string;
   hrefSecundario: string;
@@ -114,13 +118,17 @@ function JuegoCard({
   descripcion: string;
   meta: string;
   icono: React.ReactNode;
-  variante: "primario" | "cian";
+  variante: "primario" | "cian" | "acento";
   delay: number;
+  labelPrimario?: string;
+  labelSecundario?: string;
 }) {
   const fondo =
     variante === "primario"
       ? "gradient-primario text-white"
-      : "bg-[var(--color-cian)] text-white";
+      : variante === "cian"
+        ? "bg-[var(--color-cian)] text-white"
+        : "bg-[var(--color-acento)] text-white";
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -149,14 +157,14 @@ function JuegoCard({
           href={href}
           className="h-12 rounded-2xl bg-white text-[#0a0a0f] border-2 border-white flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/90 active:translate-x-1 active:translate-y-1 transition"
         >
-          Jugar local
+          {labelPrimario}
           <span className="inline-block">→</span>
         </Link>
         <Link
           href={hrefSecundario}
           className="h-12 rounded-2xl bg-white/15 backdrop-blur border-2 border-white/40 text-white flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/25 active:translate-x-1 active:translate-y-1 transition"
         >
-          Jugar online →
+          {labelSecundario} →
         </Link>
       </div>
     </motion.div>
