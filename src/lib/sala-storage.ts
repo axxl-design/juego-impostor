@@ -71,7 +71,10 @@ export async function storageGet<T>(namespace: string, codigo: string): Promise<
   const k = clave(namespace, codigo);
   if (kvDisponible()) {
     const raw = await kvCmd<string | null>(["GET", k]);
-    if (!raw) return null;
+    if (!raw) {
+      console.log(`[sala-storage] GET miss (KV) ns=${namespace} codigo="${codigo}" normalizado="${normalizarCodigo(codigo)}" key=${k}`);
+      return null;
+    }
     try {
       return JSON.parse(raw) as T;
     } catch {
@@ -80,9 +83,13 @@ export async function storageGet<T>(namespace: string, codigo: string): Promise<
   }
   limpiarMemoria();
   const entrada = MEMORIA.get(k);
-  if (!entrada) return null;
+  if (!entrada) {
+    console.log(`[sala-storage] GET miss (MEM) ns=${namespace} codigo="${codigo}" normalizado="${normalizarCodigo(codigo)}" key=${k} totalEnMem=${MEMORIA.size} aviso="Memoria NO persiste entre instancias de Vercel — configurá KV/Upstash"`);
+    return null;
+  }
   if (entrada.expira < Date.now()) {
     MEMORIA.delete(k);
+    console.log(`[sala-storage] GET expirado ns=${namespace} codigo="${codigo}" key=${k}`);
     return null;
   }
   try {
@@ -101,9 +108,11 @@ export async function storageSet<T>(
   const payload = JSON.stringify(valor);
   if (kvDisponible()) {
     await kvCmd(["SET", k, payload, "EX", TTL_SEGUNDOS]);
+    console.log(`[sala-storage] SET (KV) ns=${namespace} codigo="${codigo}" key=${k} ttl=${TTL_SEGUNDOS}s`);
     return;
   }
   MEMORIA.set(k, { expira: Date.now() + TTL_SEGUNDOS * 1000, valor: payload });
+  console.log(`[sala-storage] SET (MEM) ns=${namespace} codigo="${codigo}" key=${k} totalEnMem=${MEMORIA.size}`);
 }
 
 export async function storageDelete(namespace: string, codigo: string): Promise<void> {

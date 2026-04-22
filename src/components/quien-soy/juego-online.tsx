@@ -128,9 +128,9 @@ function Reparto({ sala, palabra, jugadorId, accion }: Props) {
 function Juego({ sala, palabra, jugadorId, accion }: Props) {
   const [aId, setAId] = useState<string>(sala.jugadores.find((j) => j.id !== jugadorId)?.id ?? "");
   const [intento, setIntento] = useState("");
-  const [feedback, setFeedback] = useState<"acierto" | "fallo" | null>(null);
   const [verPalabra, setVerPalabra] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [avanzando, setAvanzando] = useState(false);
   const [confirmandoFin, setConfirmandoFin] = useState(false);
   const [pistaMostrada, setPistaMostrada] = useState<string | null>(null);
   const ultimaTs = useRef<number>(0);
@@ -138,6 +138,8 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
   const reglas = sala.config.reglasExtra ?? { pistasActivas: false, escudoComprable: false };
   const miJugador = sala.jugadores.find((j) => j.id === jugadorId);
   const miPistas = sala.pistasUsadas?.[jugadorId] ?? 0;
+  const adivinanza = sala.ultimaAdivinanza;
+  const ganadorPend = sala.ganadorPendiente ?? null;
 
   const pedirPistaMia = async () => {
     try {
@@ -159,7 +161,6 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
     if (sala.ultimaAdivinanza.ts <= ultimaTs.current) return;
     ultimaTs.current = sala.ultimaAdivinanza.ts;
     if (sala.ultimaAdivinanza.acerto) {
-      setFeedback("acierto");
       lanzarConfetti({
         duracionMs: 900,
         porTick: 3,
@@ -167,12 +168,18 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
         spread: 70,
         colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
       });
-    } else {
-      setFeedback("fallo");
     }
-    const t = setTimeout(() => setFeedback(null), 2400);
-    return () => clearTimeout(t);
   }, [sala.ultimaAdivinanza]);
+
+  const avanzarRonda = async () => {
+    if (avanzando) return;
+    setAvanzando(true);
+    try {
+      await accion({ tipo: "siguienteRonda", jugadorId });
+    } catch {} finally {
+      setAvanzando(false);
+    }
+  };
 
   useEffect(() => {
     if (!sala.jugadores.find((j) => j.id === aId) || aId === jugadorId) {
@@ -362,13 +369,12 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {feedback && sala.ultimaAdivinanza && (
+        {adivinanza && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-            onClick={() => setFeedback(null)}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0.6, opacity: 0, y: 30 }}
@@ -378,16 +384,16 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
               className="w-full max-w-sm"
             >
               <Card
-                className="p-7 text-center text-white overflow-hidden relative"
+                className="p-6 text-center text-white overflow-hidden relative"
                 style={{
-                  background: feedback === "acierto"
+                  background: adivinanza.acerto
                     ? "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)"
                     : "linear-gradient(135deg, #ef4444 0%, #f97316 100%)",
                 }}
               >
                 <div className="flex justify-center mb-3">
                   <span className="grid place-items-center h-20 w-20 rounded-3xl bg-white/20 backdrop-blur border-2 border-white/30">
-                    {feedback === "acierto" ? (
+                    {adivinanza.acerto ? (
                       <Check className="h-12 w-12" strokeWidth={3} />
                     ) : (
                       <X className="h-12 w-12" strokeWidth={3} />
@@ -395,22 +401,51 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
                   </span>
                 </div>
                 <div className="text-xs uppercase tracking-widest opacity-80">
-                  {sala.ultimaAdivinanza.deNombre} → {sala.ultimaAdivinanza.aNombre}
+                  {adivinanza.deNombre} → {adivinanza.aNombre}
                 </div>
                 <h2 className="font-display font-black text-3xl sm:text-4xl mt-1">
-                  {feedback === "acierto" ? "¡Acertó!" : "Falló"}
+                  {adivinanza.acerto ? "¡Acertó!" : "Falló"}
                 </h2>
                 <div className="mt-3 text-sm opacity-90">Dijo</div>
-                <div className="font-display font-bold text-xl mt-0.5">&ldquo;{sala.ultimaAdivinanza.intento}&rdquo;</div>
-                {feedback === "acierto" ? (
-                  <div className="mt-3 text-sm opacity-90">
-                    Era <span className="font-bold">{sala.ultimaAdivinanza.palabraReal}</span> · +1 pt
-                  </div>
+                <div className="font-display font-bold text-xl mt-0.5">&ldquo;{adivinanza.intento}&rdquo;</div>
+                <div className="mt-3 text-sm opacity-90">
+                  Era <span className="font-bold">{adivinanza.palabraReal}</span>
+                </div>
+                {adivinanza.acerto ? (
+                  <div className="mt-1 text-sm opacity-90">+1 pt para {adivinanza.deNombre}</div>
                 ) : (
-                  <div className="mt-3 text-sm opacity-90">
-                    {sala.ultimaAdivinanza.escudoUsado ? "🛡️ Escudo usado — no perdió puntos" : "-1 pt"}
+                  <div className="mt-1 text-sm opacity-90">
+                    {adivinanza.escudoUsado ? `🛡️ Escudo usado — ${adivinanza.deNombre} no perdió puntos` : `-1 pt para ${adivinanza.deNombre}`}
                   </div>
                 )}
+                <div className="mt-4 pt-4 border-t-2 border-white/20">
+                  <div className="text-xs uppercase tracking-widest opacity-80 mb-2">Puntajes</div>
+                  <ul className="grid grid-cols-2 gap-1 text-sm">
+                    {[...sala.jugadores].sort((a, b) => b.puntos - a.puntos).map((j) => (
+                      <li key={j.id} className="flex items-center justify-between bg-white/15 rounded-lg px-2 py-1">
+                        <span className="truncate font-semibold">{j.nombre}</span>
+                        <span className="font-mono font-bold ml-2">{j.puntos}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-5">
+                  {esHost ? (
+                    <Button
+                      tamano="lg"
+                      variante="secundario"
+                      className="w-full"
+                      onClick={avanzarRonda}
+                      cargando={avanzando}
+                    >
+                      {ganadorPend ? "Ver resultado final" : "Siguiente ronda"}
+                    </Button>
+                  ) : (
+                    <div className="text-sm opacity-90 py-2">
+                      Esperando al anfitrión...
+                    </div>
+                  )}
+                </div>
               </Card>
             </motion.div>
           </motion.div>

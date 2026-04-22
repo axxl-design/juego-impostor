@@ -105,6 +105,7 @@ export type SalaQuienSoy = {
     ts: number;
   } | null;
   ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;
+  ganadorPendiente?: { tipo: "puntos" | "rondas"; ids: string[] } | null;
   creadaEn: number;
 };
 

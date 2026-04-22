@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Card } from "./ui/card";
@@ -10,15 +12,38 @@ type Props = {
 };
 
 export function ReglasModal({ abierto, onCerrar }: Props) {
-  return (
+  const [montado, setMontado] = useState(false);
+  useEffect(() => {
+    setMontado(true);
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCerrar();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = original;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [abierto, onCerrar]);
+
+  if (!montado) return null;
+
+  const contenido = (
     <AnimatePresence>
       {abierto && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 overflow-y-auto"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 overflow-y-auto"
           onClick={onCerrar}
+          role="dialog"
+          aria-modal="true"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -103,6 +128,8 @@ export function ReglasModal({ abierto, onCerrar }: Props) {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(contenido, document.body);
 }
 
 function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {

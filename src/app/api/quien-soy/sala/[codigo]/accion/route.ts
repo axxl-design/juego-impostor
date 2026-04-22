@@ -10,6 +10,7 @@ import {
   obtenerSala,
   pedirPistaQuienSoy,
   salir,
+  siguienteRondaQuienSoy,
   terminarPartida,
   unirse,
   vistaPublica,
@@ -29,6 +30,7 @@ type Accion =
   | { tipo: "marcarVisto"; jugadorId: string }
   | { tipo: "continuar"; jugadorId: string }
   | { tipo: "adivinar"; jugadorId: string; aId: string; intento: string }
+  | { tipo: "siguienteRonda"; jugadorId: string }
   | { tipo: "terminarPartida"; jugadorId: string }
   | { tipo: "jugarOtraVez"; jugadorId: string }
   | { tipo: "volverALobby"; jugadorId: string }
@@ -81,6 +83,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       extra = { acerto: r.acerto, fin: r.fin };
       if (r.acerto) palabrasReasignadas = true;
+      break;
+    }
+    case "siguienteRonda": {
+      const r = await siguienteRondaQuienSoy(codigo, body.jugadorId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      extra = { fin: r.fin };
       break;
     }
     case "terminarPartida": {

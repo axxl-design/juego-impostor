@@ -77,6 +77,7 @@ export function vistaPublica(sala: SalaQuienSoy) {
     pistasUsadas: sala.pistasUsadas,
     ultimaAdivinanza: sala.ultimaAdivinanza,
     ganador: sala.ganador,
+    ganadorPendiente: sala.ganadorPendiente ?? null,
     categoriaNombre: buscarCategoria(sala.config.categoriaId)?.nombre ?? null,
   };
 }
@@ -254,24 +255,17 @@ export async function adivinar(
     nuevaPalabraPara(sala, de.id);
 
     if (sala.config.modoVictoria === "puntos" && de.puntos >= sala.config.objetivo) {
-      sala.fase = "fin";
-      sala.ganador = { tipo: "puntos", ids: [de.id] };
+      sala.ganadorPendiente = { tipo: "puntos", ids: [de.id] };
       await guardar(sala);
       return { acerto: true, fin: true };
     }
 
-    if (sala.config.modoVictoria === "rondas") {
-      if (sala.rondaActual >= sala.config.objetivo) {
-        const max = Math.max(...sala.jugadores.map((j) => j.puntos));
-        const ganadores = sala.jugadores.filter((j) => j.puntos === max).map((j) => j.id);
-        sala.fase = "fin";
-        sala.ganador = { tipo: "rondas", ids: ganadores };
-        await guardar(sala);
-        return { acerto: true, fin: true };
-      }
-      sala.rondaActual += 1;
-    } else {
-      sala.rondaActual += 1;
+    if (sala.config.modoVictoria === "rondas" && sala.rondaActual >= sala.config.objetivo) {
+      const max = Math.max(...sala.jugadores.map((j) => j.puntos));
+      const ganadores = sala.jugadores.filter((j) => j.puntos === max).map((j) => j.id);
+      sala.ganadorPendiente = { tipo: "rondas", ids: ganadores };
+      await guardar(sala);
+      return { acerto: true, fin: true };
     }
     await guardar(sala);
     return { acerto: true };
@@ -284,6 +278,32 @@ export async function adivinar(
     await guardar(sala);
     return { acerto: false };
   }
+}
+
+export async function siguienteRondaQuienSoy(
+  codigo: string,
+  jugadorId: string,
+): Promise<{ error?: string; fin?: boolean }> {
+  const sala = await obtenerSala(codigo);
+  if (!sala) return { error: "Sala no encontrada" };
+  if (sala.hostId !== jugadorId) return { error: "Solo el anfitrión puede avanzar" };
+  if (sala.fase !== "juego") return { error: "No es momento de avanzar" };
+  if (!sala.ultimaAdivinanza) return { error: "No hay jugada que confirmar" };
+
+  if (sala.ganadorPendiente) {
+    sala.fase = "fin";
+    sala.ganador = sala.ganadorPendiente;
+    sala.ganadorPendiente = null;
+    sala.ultimaAdivinanza = null;
+    await guardar(sala);
+    return { fin: true };
+  }
+  if (sala.ultimaAdivinanza.acerto) {
+    sala.rondaActual += 1;
+  }
+  sala.ultimaAdivinanza = null;
+  await guardar(sala);
+  return {};
 }
 
 export async function terminarPartida(

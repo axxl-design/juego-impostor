@@ -62,32 +62,56 @@ const REGLAS: ReglaDef[] = [
   },
 ];
 
+function Toggle({ activo, onToggle, disabled }: { activo: boolean; onToggle: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={activo}
+      disabled={disabled}
+      onClick={(e) => {
+        e.preventDefault();
+        if (!disabled) onToggle();
+      }}
+      className={cn(
+        "relative w-11 h-6 mt-0.5 rounded-full border-2 border-[var(--color-borde)] shrink-0 transition-colors duration-200 ease-out",
+        activo ? "bg-[var(--color-primario-500)]" : "bg-[var(--color-fondo)]",
+        disabled && "opacity-60 cursor-not-allowed",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 w-4 h-4 bg-white border-2 border-[var(--color-borde)] rounded-full transition-transform duration-200 ease-out",
+          activo ? "translate-x-[1.25rem]" : "translate-x-0.5",
+        )}
+      />
+    </button>
+  );
+}
+
 export function ReglasExtraImpostorSeccion({ reglas, onChange, disabled }: Props) {
   return (
     <div className="space-y-2">
       {REGLAS.map((r) => {
         const bloqueado = !!r.requiere && !reglas[r.requiere];
         const activo = !!reglas[r.key] && !bloqueado;
+        const inhabilitado = disabled || bloqueado;
         return (
           <Card key={r.key} className={cn("p-3 sm:p-4", bloqueado && "opacity-60")}>
-            <label
-              className={cn(
-                "flex items-start gap-3",
-                disabled || bloqueado ? "cursor-not-allowed" : "cursor-pointer",
-              )}
+            <div
+              className={cn("flex items-start gap-3", inhabilitado ? "cursor-not-allowed" : "cursor-pointer")}
+              onClick={() => {
+                if (inhabilitado) return;
+                onChange({ [r.key]: !activo } as Partial<ReglasExtraImpostor>);
+              }}
               title={bloqueado ? r.motivoBloqueo : undefined}
             >
-              <input
-                type="checkbox"
-                disabled={disabled || bloqueado}
-                checked={activo}
-                onChange={(e) => onChange({ [r.key]: e.target.checked } as Partial<ReglasExtraImpostor>)}
-                className="sr-only peer"
+              <Toggle
+                activo={activo}
+                disabled={inhabilitado}
+                onToggle={() => onChange({ [r.key]: !activo } as Partial<ReglasExtraImpostor>)}
               />
-              <span className="relative w-11 h-6 mt-0.5 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo)] peer-checked:gradient-primario transition-colors shrink-0">
-                <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white border-2 border-[var(--color-borde)] rounded-full peer-checked:translate-x-5 transition-transform" />
-              </span>
-              <span className="flex-1 min-w-0">
+              <span className="flex-1 min-w-0 select-none">
                 <span className="flex items-center gap-2 font-semibold text-sm sm:text-base">
                   <span className="text-lg leading-none">{r.emoji}</span>
                   {r.titulo}
@@ -96,7 +120,7 @@ export function ReglasExtraImpostorSeccion({ reglas, onChange, disabled }: Props
                   {bloqueado ? r.motivoBloqueo : r.descripcion}
                 </span>
               </span>
-            </label>
+            </div>
           </Card>
         );
       })}
@@ -104,7 +128,6 @@ export function ReglasExtraImpostorSeccion({ reglas, onChange, disabled }: Props
   );
 }
 
-// Variante para ¿Quién Soy?
 type PropsQS = {
   reglas: { pistasActivas: boolean; escudoComprable: boolean };
   onChange: (parcial: Partial<{ pistasActivas: boolean; escudoComprable: boolean }>) => void;
@@ -128,31 +151,35 @@ export function ReglasExtraQuienSoySeccion({ reglas, onChange, disabled }: Props
   ];
   return (
     <div className="space-y-2">
-      {items.map((r) => (
-        <Card key={r.key} className="p-3 sm:p-4">
-          <label className={cn("flex items-start gap-3", disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer")}>
-            <input
-              type="checkbox"
-              disabled={disabled}
-              checked={reglas[r.key]}
-              onChange={(e) => onChange({ [r.key]: e.target.checked })}
-              className="sr-only peer"
-            />
-            <span className="relative w-11 h-6 mt-0.5 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo)] peer-checked:gradient-primario transition-colors shrink-0">
-              <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white border-2 border-[var(--color-borde)] rounded-full peer-checked:translate-x-5 transition-transform" />
-            </span>
-            <span className="flex-1 min-w-0">
-              <span className="flex items-center gap-2 font-semibold text-sm sm:text-base">
-                <span className="text-lg leading-none">{r.emoji}</span>
-                {r.titulo}
+      {items.map((r) => {
+        const activo = reglas[r.key];
+        return (
+          <Card key={r.key} className="p-3 sm:p-4">
+            <div
+              className={cn("flex items-start gap-3", disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer")}
+              onClick={() => {
+                if (disabled) return;
+                onChange({ [r.key]: !activo });
+              }}
+            >
+              <Toggle
+                activo={activo}
+                disabled={disabled}
+                onToggle={() => onChange({ [r.key]: !activo })}
+              />
+              <span className="flex-1 min-w-0 select-none">
+                <span className="flex items-center gap-2 font-semibold text-sm sm:text-base">
+                  <span className="text-lg leading-none">{r.emoji}</span>
+                  {r.titulo}
+                </span>
+                <span className="block text-xs sm:text-sm text-[var(--color-tinta-suave)] mt-0.5 leading-snug">
+                  {r.descripcion}
+                </span>
               </span>
-              <span className="block text-xs sm:text-sm text-[var(--color-tinta-suave)] mt-0.5 leading-snug">
-                {r.descripcion}
-              </span>
-            </span>
-          </label>
-        </Card>
-      ))}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 }

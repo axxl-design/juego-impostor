@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Check, X, Target, Trophy, Flag, Lightbulb, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,24 +18,29 @@ export function JuegoLocalQuienSoy() {
     rondaActual,
     pistasUsadas,
     ultimaAdivinanza,
+    ganadorPendiente,
     intentarAdivinanza,
     pedirPista,
     comprarEscudo,
     terminarPartida,
-    limpiarUltimaAdivinanza,
+    siguienteRonda,
   } = useJuegoQuienSoyLocal();
 
   const [deId, setDeId] = useState<string>(jugadores[0]?.id ?? "");
   const [aId, setAId] = useState<string>(jugadores[1]?.id ?? "");
   const [intento, setIntento] = useState("");
-  const [feedback, setFeedback] = useState<"acierto" | "fallo" | null>(null);
   const [confirmandoFin, setConfirmandoFin] = useState(false);
   const [pistaMostrada, setPistaMostrada] = useState<{ nombre: string; texto: string } | null>(null);
+  const confettiDisparadoRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!ultimaAdivinanza) return;
-    if (ultimaAdivinanza.acerto) {
-      setFeedback("acierto");
+    if (!ultimaAdivinanza) {
+      confettiDisparadoRef.current = null;
+      return;
+    }
+    const key = `${ultimaAdivinanza.deId}-${ultimaAdivinanza.aId}-${ultimaAdivinanza.intento}-${ultimaAdivinanza.acerto}`;
+    if (ultimaAdivinanza.acerto && confettiDisparadoRef.current !== key) {
+      confettiDisparadoRef.current = key;
       lanzarConfetti({
         duracionMs: 900,
         porTick: 3,
@@ -43,15 +48,8 @@ export function JuegoLocalQuienSoy() {
         spread: 70,
         colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
       });
-    } else {
-      setFeedback("fallo");
     }
-    const t = setTimeout(() => {
-      setFeedback(null);
-      limpiarUltimaAdivinanza();
-    }, 2400);
-    return () => clearTimeout(t);
-  }, [ultimaAdivinanza, limpiarUltimaAdivinanza]);
+  }, [ultimaAdivinanza]);
 
   useEffect(() => {
     if (!jugadores.find((j) => j.id === deId)) setDeId(jugadores[0]?.id ?? "");
@@ -236,16 +234,12 @@ export function JuegoLocalQuienSoy() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {feedback && ultimaAdivinanza && (
+        {ultimaAdivinanza && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-            onClick={() => {
-              setFeedback(null);
-              limpiarUltimaAdivinanza();
-            }}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0.6, opacity: 0, y: 30 }}
@@ -255,16 +249,16 @@ export function JuegoLocalQuienSoy() {
               className="w-full max-w-sm"
             >
               <Card
-                className="p-7 text-center text-white overflow-hidden relative"
+                className="p-6 text-center text-white overflow-hidden relative"
                 style={{
-                  background: feedback === "acierto"
+                  background: ultimaAdivinanza.acerto
                     ? "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)"
                     : "linear-gradient(135deg, #ef4444 0%, #f97316 100%)",
                 }}
               >
                 <div className="flex justify-center mb-3">
                   <span className="grid place-items-center h-20 w-20 rounded-3xl bg-white/20 backdrop-blur border-2 border-white/30">
-                    {feedback === "acierto" ? (
+                    {ultimaAdivinanza.acerto ? (
                       <Check className="h-12 w-12" strokeWidth={3} />
                     ) : (
                       <X className="h-12 w-12" strokeWidth={3} />
@@ -275,21 +269,43 @@ export function JuegoLocalQuienSoy() {
                   {ultimaAdivinanza.deNombre} → {ultimaAdivinanza.aNombre}
                 </div>
                 <h2 className="font-display font-black text-3xl sm:text-4xl mt-1">
-                  {feedback === "acierto" ? "¡Acertó!" : "Falló"}
+                  {ultimaAdivinanza.acerto ? "¡Acertó!" : "Falló"}
                 </h2>
                 <div className="mt-3 text-sm opacity-90">Dijo</div>
                 <div className="font-display font-bold text-xl mt-0.5">&ldquo;{ultimaAdivinanza.intento}&rdquo;</div>
-                {feedback === "acierto" ? (
-                  <div className="mt-3 text-sm opacity-90">
-                    Era <span className="font-bold">{ultimaAdivinanza.palabraReal}</span> · +1 pt para {ultimaAdivinanza.deNombre}
-                  </div>
+                <div className="mt-3 text-sm opacity-90">
+                  Era <span className="font-bold">{ultimaAdivinanza.palabraReal}</span>
+                </div>
+                {ultimaAdivinanza.acerto ? (
+                  <div className="mt-1 text-sm opacity-90">+1 pt para {ultimaAdivinanza.deNombre}</div>
                 ) : (
-                  <div className="mt-3 text-sm opacity-90">
+                  <div className="mt-1 text-sm opacity-90">
                     {ultimaAdivinanza.escudoUsado
                       ? `🛡️ Escudo usado — no perdió puntos`
                       : `-1 pt para ${ultimaAdivinanza.deNombre}`}
                   </div>
                 )}
+                <div className="mt-4 pt-4 border-t-2 border-white/20">
+                  <div className="text-xs uppercase tracking-widest opacity-80 mb-2">Puntajes</div>
+                  <ul className="grid grid-cols-2 gap-1 text-sm">
+                    {[...jugadores].sort((a, b) => b.puntos - a.puntos).map((j) => (
+                      <li key={j.id} className="flex items-center justify-between bg-white/15 rounded-lg px-2 py-1">
+                        <span className="truncate font-semibold">{j.nombre}</span>
+                        <span className="font-mono font-bold ml-2">{j.puntos}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-5">
+                  <Button
+                    tamano="lg"
+                    variante="secundario"
+                    className="w-full"
+                    onClick={siguienteRonda}
+                  >
+                    {ganadorPendiente ? "Ver resultado final" : "Siguiente ronda"}
+                  </Button>
+                </div>
               </Card>
             </motion.div>
           </motion.div>

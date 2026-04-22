@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["framer-motion"],
+  },
   async redirects() {
     return [
       { source: "/local", destination: "/impostor/local", permanent: true },

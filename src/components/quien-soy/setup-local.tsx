@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
-import { CATEGORIAS } from "@/lib/palabras";
+import { CATEGORIAS_META as CATEGORIAS } from "@/lib/categorias-meta";
 import { useJuegoQuienSoyLocal } from "@/lib/store-local-quien-soy";
 import type { Dificultad, ModoVictoria } from "@/lib/types";
 import { cn } from "@/lib/utils";

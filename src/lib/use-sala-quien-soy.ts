@@ -24,6 +24,7 @@ export type SalaQuienSoyPublica = {
     ts: number;
   } | null;
   ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;
+  ganadorPendiente?: { tipo: "puntos" | "rondas"; ids: string[] } | null;
   categoriaNombre: string | null;
 };
 
