@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, VenetianMask, HelpCircle, Lock } from "lucide-react";
+import { Sparkles, VenetianMask, HelpCircle, Lock, Globe2 } from "lucide-react";
 import { Header } from "@/components/header";
 
 export default function Hub() {
@@ -54,6 +54,19 @@ export default function Hub() {
               variante="cian"
               delay={0.2}
             />
+            <div className="md:col-span-2">
+              <JuegoCard
+                href="/vidas/local"
+                hrefSecundario="/vidas/online"
+                titulo="Vidas 🌍"
+                tagline="Elegí un mundo, un rol, y viví tu historia."
+                descripcion="Cada decisión cuenta. Una vida entera en cartas: medieval, mundo actual o con poderes. Solo o con alguien."
+                meta="3 mundos · 1-2 jugadores · Narrativo con IA"
+                icono={<Globe2 className="h-8 w-8" />}
+                variante="cian"
+                delay={0.3}
+              />
+            </div>
           </div>
 
           <motion.div

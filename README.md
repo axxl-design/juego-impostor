@@ -25,6 +25,19 @@ Uno de los jugadores es el impostor secreto: los demás saben una palabra (por e
 - 💬 **Preguntas sugeridas** · Panel plegable con preguntas neutras para romper el hielo.
 - 👑 **Jefe Final cada 5 rondas** · Ronda especial con 2 impostores, categoría Mezcla total y puntaje x2. Requiere Puntaje persistente.
 
+### 🌍 Vidas
+RPG narrativo de vida entera. Elegís un mundo, un rol, un nombre, y vivís desde los 18 años hasta la muerte tomando decisiones sobre cartas. Cada decisión mueve stats (karma, influencia, riqueza, salud) y cambia tu rango social. El final es un epílogo personalizado con highlights de tu vida.
+
+- **3 mundos · 1-2 jugadores · Local + Online**
+- **Mundos del prototipo:** Reino Medieval 🏰, Mundo Actual 🌆, Mundo con Poderes ⚡. (Próximos: Japón feudal, Antigua Grecia, Futuro distópico, Colonia espacial, Post-apocalíptico.)
+- **Roles por mundo:** 5 opciones, cada una con stats iniciales y punto de partida distinto.
+- **Etapas de vida:** Juventud (18-35), Madurez (36-60), Vejez (60-95). Las cartas varían según etapa. La muerte puede llegar por salud 0 o por edad.
+- **Modo local:** guarda automáticamente en `localStorage`. Podés tener varias vidas abiertas, cerrar, y volver después.
+- **Modo 2 jugadores:** mismo mundo, roles posiblemente distintos, turnos alternados. Cada uno tiene stats propios y comparten un **Vínculo** (0-100) que sube si las decisiones cuidan a la relación. Al crear la sala el host elige si la relación es "Amigos" o "Pareja" — el tono se adapta y se intercalan cartas románticas extras.
+- **Sin magia.** El mundo de Poderes usa habilidades biológicas, tecnología implantada y entrenamiento extremo. Nunca hechizos.
+- **Cartas banqueadas:** hay un banco local de ~120 cartas curadas que garantiza que el juego funciona sin conexión a IA. Cada carta tiene 4 opciones moralmente grises con trade-offs reales.
+- **Botón "Situación IA" (opcional):** llama a Claude Haiku 4.5 para generar una carta personalizada en base a tu mundo, rol, stats, últimas decisiones y tipo de relación. Máx 5 usos por partida. Requiere `ANTHROPIC_API_KEY` — sin ella, el juego corre perfecto con el banco hardcodeado y el botón muestra un mensaje amigable. Ver la sección 5 de este README.
+
 ### ❓ ¿Quién Soy?
 Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse preguntas cara a cara o por chat externo y traten de adivinar lo que tiene el otro.
 
@@ -166,6 +179,36 @@ Listo. Ahora las salas viven en Redis y funcionan entre todas las instancias. El
 
 ---
 
+## 5. Configurar IA para el juego Vidas (opcional)
+
+El juego Vidas funciona completo con el banco de cartas hardcodeado. La API key de Anthropic solo se necesita para el botón **"Situación IA"** que genera cartas personalizadas en base al estado del jugador. Sin la key, ese botón devuelve un mensaje claro y el juego sigue normalmente.
+
+### 5.1. Conseguir la API key
+
+1. Entrá a [console.anthropic.com](https://console.anthropic.com) y creá cuenta (sirve Google).
+2. Andá a **API Keys** y hacé clic en **Create Key**.
+3. Copiala (formato: `sk-ant-...`). Una vez que cerrás la ventana, no la podés ver de nuevo.
+
+### 5.2. Pegarla en el proyecto
+
+Agregá al archivo `.env.local`:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Reiniciá el server (`Ctrl+C` y `npm run dev` de nuevo).
+
+### 5.3. Agregarla en Vercel
+
+En **Settings → Environment Variables** agregá `ANTHROPIC_API_KEY` con el mismo valor. Redeploy.
+
+### Modelo
+
+El juego usa `claude-haiku-4-5-20251001` (el modelo más chico y rápido de Claude 4). El prompt incluye mundo, rol, etapa, stats actuales y las últimas 3 decisiones del jugador, y pide JSON estricto. Se validan opciones y efectos antes de servir la carta al cliente.
+
+---
+
 ## Estructura
 
 ```
@@ -179,9 +222,20 @@ src/app/
     local/                       # ¿Quién Soy? en un dispositivo
     online/
     sala/[codigo]/
+  vidas/
+    page.tsx                     # Hub del juego Vidas
+    local/                       # Saves locales + nueva vida
+    online/                      # Crear/entrar sala
+    sala/[codigo]/               # Sala 2P con lobby y juego
   api/
     impostor/sala/...            # API del impostor
     quien-soy/sala/...           # API de ¿Quién Soy?
+    vidas/
+      sala/crear                 # Crear sala 2P
+      sala/[codigo]              # GET estado
+      sala/[codigo]/accion       # POST acciones
+      sala/[codigo]/generar      # POST generar carta IA (online)
+      generar                    # POST generar carta IA (local)
 src/components/
   juego/                         # Componentes del impostor (local)
   online/                        # Componentes del impostor (online)
