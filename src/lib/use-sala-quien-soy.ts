@@ -11,7 +11,6 @@ export type SalaQuienSoyPublica = {
   config: ConfigQuienSoy;
   fase: "lobby" | "reparto" | "juego" | "fin";
   rondaActual: number;
-  finEn: number | null;
   ultimaAdivinanza: {
     deId: string;
     deNombre: string;
@@ -22,7 +21,7 @@ export type SalaQuienSoyPublica = {
     acerto: boolean;
     ts: number;
   } | null;
-  ganador: { tipo: "puntos" | "rondas"; ids: string[] } | null;
+  ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;
   categoriaNombre: string | null;
 };
 

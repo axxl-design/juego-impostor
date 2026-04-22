@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!nombre.trim()) {
     return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
   }
-  const { sala, jugadorId } = crearSala(nombre);
+  const { sala, jugadorId } = await crearSala(nombre);
   return NextResponse.json({
     codigo: sala.codigo,
     jugadorId,

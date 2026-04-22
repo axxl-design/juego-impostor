@@ -134,7 +134,7 @@ function JuegoCard({
       <div className="mt-6 grid grid-cols-2 gap-2 relative z-10">
         <Link
           href={href}
-          className="h-12 rounded-2xl bg-white text-[var(--color-tinta)] border-2 border-white flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/90 active:translate-x-1 active:translate-y-1 transition"
+          className="h-12 rounded-2xl bg-white text-[#0a0a0f] border-2 border-white flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/90 active:translate-x-1 active:translate-y-1 transition"
         >
           Jugar local
           <span className="inline-block">→</span>

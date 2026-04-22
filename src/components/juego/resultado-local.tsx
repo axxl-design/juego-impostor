@@ -3,51 +3,67 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Skull, RotateCcw, Home } from "lucide-react";
-import confetti from "canvas-confetti";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { useJuegoLocal } from "@/lib/store-local-impostor";
+import { lanzarConfetti } from "@/lib/confetti";
 
 export function ResultadoLocal() {
   const { resultado, ronda, reiniciarRonda, volverAConfig } = useJuegoLocal();
 
   useEffect(() => {
     if (resultado && !resultado.ganaImpostor) {
-      const fin = Date.now() + 1500;
-      const lanzar = () => {
-        confetti({
-          particleCount: 4,
-          startVelocity: 35,
-          spread: 80,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
-        });
-        if (Date.now() < fin) requestAnimationFrame(lanzar);
-      };
-      lanzar();
+      lanzarConfetti({
+        duracionMs: 1500,
+        porTick: 4,
+        startVelocity: 35,
+        spread: 80,
+        colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
+      });
     }
   }, [resultado]);
 
   if (!resultado || !ronda) return null;
 
   const civilesGanan = !resultado.ganaImpostor;
+  const porAdivinanza = resultado.porAdivinanza === true;
+
+  const titulo = porAdivinanza
+    ? civilesGanan
+      ? "El impostor falló"
+      : "¡El impostor adivinó!"
+    : civilesGanan
+      ? "¡Atrapado!"
+      : "Se salió con la suya";
+
+  const subtitulo = porAdivinanza
+    ? civilesGanan
+      ? "Se arriesgó y falló"
+      : "Adivinó la palabra secreta"
+    : civilesGanan
+      ? "Ganan los civiles"
+      : "Gana el impostor";
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center px-4 sm:px-6 pb-12 pt-4">
       <div className="w-full max-w-md space-y-6">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 240, damping: 20 }}
+          initial={{ scale: 0.8, opacity: 0, x: porAdivinanza && !civilesGanan ? -8 : 0 }}
+          animate={porAdivinanza && !civilesGanan
+            ? { scale: 1, opacity: 1, x: [0, -6, 6, -4, 4, 0] }
+            : { scale: 1, opacity: 1 }}
+          transition={porAdivinanza && !civilesGanan
+            ? { duration: 0.6, ease: "easeOut" }
+            : { type: "spring", stiffness: 240, damping: 20 }}
         >
           <Card
             className="p-8 text-center text-white overflow-hidden relative"
             style={{
               background: civilesGanan
                 ? "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)"
-                : "#0a0a0f",
+                : "linear-gradient(135deg, #0a0a0f 0%, #4c0519 100%)",
             }}
           >
             <div className="flex justify-center mb-4">
@@ -60,15 +76,19 @@ export function ResultadoLocal() {
               </span>
             </div>
             <div className="text-xs uppercase tracking-widest opacity-80">
-              {civilesGanan ? "Ganan los civiles" : "Gana el impostor"}
+              {subtitulo}
             </div>
             <h1 className="font-display font-black text-4xl sm:text-5xl mt-2 tracking-tight">
-              {civilesGanan ? "¡Atrapado!" : "Se salió con la suya"}
+              {titulo}
             </h1>
             <p className="mt-3 text-white/85">
-              {civilesGanan
-                ? "Lograron descubrir al infiltrado a tiempo."
-                : "El impostor logró pasar desapercibido."}
+              {porAdivinanza
+                ? civilesGanan
+                  ? "El impostor apostó todo y no acertó la palabra."
+                  : "El impostor adivinó la palabra secreta y se llevó la ronda."
+                : civilesGanan
+                  ? "Lograron descubrir al infiltrado a tiempo."
+                  : "El impostor logró pasar desapercibido."}
             </p>
           </Card>
         </motion.div>
@@ -91,6 +111,16 @@ export function ResultadoLocal() {
             <div className="text-sm text-[var(--color-tinta-suave)] mt-1">
               ({ronda.categoriaNombre})
             </div>
+            {porAdivinanza && resultado.palabraIntento && (
+              <div className="mt-4">
+                <div className="text-xs uppercase tracking-widest text-[var(--color-tinta-suave)]">
+                  El impostor dijo
+                </div>
+                <div className="mt-1 font-display font-bold text-xl">
+                  &ldquo;{resultado.palabraIntento}&rdquo;
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 

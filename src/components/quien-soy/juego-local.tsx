@@ -1,71 +1,44 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
-import { Send, Check, X, Target, Trophy } from "lucide-react";
+import { Send, Check, X, Target, Trophy, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useJuegoQuienSoyLocal } from "@/lib/store-local-quien-soy";
-import { cn, formatearTiempo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { lanzarConfetti } from "@/lib/confetti";
 
 export function JuegoLocalQuienSoy() {
   const {
     jugadores,
     config,
-    finEn,
     rondaActual,
     ultimaAdivinanza,
     intentarAdivinanza,
-    rondaTerminada,
+    terminarPartida,
     limpiarUltimaAdivinanza,
   } = useJuegoQuienSoyLocal();
 
-  const [restante, setRestante] = useState(config.duracionSeg);
   const [deId, setDeId] = useState<string>(jugadores[0]?.id ?? "");
   const [aId, setAId] = useState<string>(jugadores[1]?.id ?? "");
   const [intento, setIntento] = useState("");
   const [feedback, setFeedback] = useState<"acierto" | "fallo" | null>(null);
-  const yaTermino = useRef(false);
-
-  useEffect(() => {
-    if (!finEn) return;
-    yaTermino.current = false;
-    const tick = () => {
-      const ms = finEn - Date.now();
-      setRestante(Math.max(0, Math.ceil(ms / 1000)));
-    };
-    tick();
-    const id = setInterval(tick, 250);
-    return () => clearInterval(id);
-  }, [finEn]);
-
-  useEffect(() => {
-    if (restante === 0 && finEn && !yaTermino.current) {
-      yaTermino.current = true;
-      const t = setTimeout(() => rondaTerminada(), 800);
-      return () => clearTimeout(t);
-    }
-  }, [restante, finEn, rondaTerminada]);
+  const [confirmandoFin, setConfirmandoFin] = useState(false);
 
   useEffect(() => {
     if (!ultimaAdivinanza) return;
     if (ultimaAdivinanza.acerto) {
       setFeedback("acierto");
-      const fin = Date.now() + 900;
-      const lanzar = () => {
-        confetti({
-          particleCount: 3,
-          startVelocity: 30,
-          spread: 70,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
-        });
-        if (Date.now() < fin) requestAnimationFrame(lanzar);
-      };
-      lanzar();
+      lanzarConfetti({
+        duracionMs: 900,
+        porTick: 3,
+        startVelocity: 30,
+        spread: 70,
+        colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
+      });
     } else {
       setFeedback("fallo");
     }
@@ -91,8 +64,6 @@ export function JuegoLocalQuienSoy() {
     setIntento("");
   };
 
-  const peligro = restante <= 10;
-  const progreso = config.duracionSeg > 0 ? restante / config.duracionSeg : 0;
   const ranking = [...jugadores].sort((a, b) => b.puntos - a.puntos);
 
   return (
@@ -104,16 +75,13 @@ export function JuegoLocalQuienSoy() {
               ? `Primero a ${config.objetivo} pts`
               : `Ronda ${rondaActual}/${config.objetivo}`}
           </div>
-          <div className={cn("font-mono font-bold text-3xl sm:text-4xl tabular-nums", peligro ? "text-[var(--color-peligro)]" : "text-gradient-primario")}>
-            {formatearTiempo(restante)}
-          </div>
-        </div>
-        <div className="h-2 rounded-full overflow-hidden border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)]">
-          <motion.div
-            className={cn("h-full", peligro ? "bg-[var(--color-peligro)]" : "gradient-primario")}
-            animate={{ width: `${progreso * 100}%` }}
-            transition={{ duration: 0.3, ease: "linear" }}
-          />
+          <button
+            onClick={() => setConfirmandoFin(true)}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)] text-xs font-semibold hover:bg-[var(--color-peligro)] hover:text-white transition"
+          >
+            <Flag className="h-3.5 w-3.5" />
+            Terminar partida
+          </button>
         </div>
 
         <Card className="p-4">
@@ -265,6 +233,44 @@ export function JuegoLocalQuienSoy() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmandoFin && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+            onClick={() => setConfirmandoFin(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm"
+            >
+              <Card className="p-6 text-center">
+                <div className="mx-auto grid place-items-center h-14 w-14 rounded-2xl bg-[var(--color-peligro)]/15 border-2 border-[var(--color-peligro)] mb-3">
+                  <Flag className="h-6 w-6 text-[var(--color-peligro)]" />
+                </div>
+                <h2 className="font-display font-bold text-xl">¿Terminar la partida?</h2>
+                <p className="mt-2 text-sm text-[var(--color-tinta-suave)]">
+                  Gana el que tenga más puntos en este momento.
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <Button variante="secundario" tamano="md" onClick={() => setConfirmandoFin(false)}>
+                    Seguir jugando
+                  </Button>
+                  <Button variante="peligro" tamano="md" onClick={() => { setConfirmandoFin(false); terminarPartida(); }}>
+                    Terminar
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -278,33 +284,13 @@ export function FinLocalQuienSoy() {
     const top = ranking[0];
     const segundo = ranking[1];
     const ventaja = (top?.puntos ?? 0) - (segundo?.puntos ?? 0);
-    if (ventaja >= 3) {
-      const fin = Date.now() + 1800;
-      const lanzar = () => {
-        confetti({
-          particleCount: 5,
-          startVelocity: 40,
-          spread: 90,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors: ["#a855f7", "#ec4899", "#06b6d4", "#f59e0b", "#10b981"],
-        });
-        if (Date.now() < fin) requestAnimationFrame(lanzar);
-      };
-      lanzar();
-    } else {
-      const fin = Date.now() + 900;
-      const lanzar = () => {
-        confetti({
-          particleCount: 3,
-          startVelocity: 30,
-          spread: 70,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors: ["#a855f7", "#ec4899", "#06b6d4"],
-        });
-        if (Date.now() < fin) requestAnimationFrame(lanzar);
-      };
-      lanzar();
-    }
+    lanzarConfetti({
+      duracionMs: ventaja >= 3 ? 1800 : 900,
+      porTick: ventaja >= 3 ? 5 : 3,
+      startVelocity: ventaja >= 3 ? 40 : 30,
+      spread: ventaja >= 3 ? 90 : 70,
+      colors: ["#a855f7", "#ec4899", "#06b6d4", "#f59e0b", "#10b981"],
+    });
   }, [ganador, ranking]);
 
   if (!ganador) return null;
@@ -324,7 +310,11 @@ export function FinLocalQuienSoy() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)] mb-4">
             <Trophy className="h-4 w-4 text-[var(--color-primario-500)]" />
             <span className="text-xs font-bold uppercase tracking-widest">
-              {config.modoVictoria === "puntos" ? `Primero a ${config.objetivo} pts` : `${config.objetivo} rondas jugadas`}
+              {ganador.tipo === "terminada"
+                ? "Partida terminada"
+                : config.modoVictoria === "puntos"
+                  ? `Primero a ${config.objetivo} pts`
+                  : `${config.objetivo} rondas jugadas`}
             </span>
           </div>
           <h1 className="font-display font-black text-4xl sm:text-5xl tracking-tight">

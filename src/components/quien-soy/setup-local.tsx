@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Play, Users, Tag, Gauge, Clock, Trophy, Target } from "lucide-react";
+import { Plus, Trash2, Play, Users, Tag, Gauge, Trophy, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,14 +16,6 @@ const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
   { id: "facil", nombre: "Fácil", tono: "from-emerald-400 to-emerald-600" },
   { id: "medio", nombre: "Medio", tono: "from-amber-400 to-orange-500" },
   { id: "dificil", nombre: "Difícil", tono: "from-pink-500 to-fuchsia-600" },
-];
-
-const TIEMPOS = [
-  { seg: 120, label: "2m" },
-  { seg: 180, label: "3m" },
-  { seg: 300, label: "5m" },
-  { seg: 420, label: "7m" },
-  { seg: 600, label: "10m" },
 ];
 
 const MODOS: { id: ModoVictoria; nombre: string; sub: string; min: number; max: number; def: number }[] = [
@@ -146,29 +138,6 @@ export function SetupLocalQuienSoy() {
                 )}
               >
                 {d.nombre}
-              </motion.button>
-            );
-          })}
-        </div>
-      </Section>
-
-      <Section icono={<Clock className="h-5 w-5" />} titulo="Tiempo por ronda">
-        <div className="grid grid-cols-5 gap-2">
-          {TIEMPOS.map((t) => {
-            const activa = config.duracionSeg === t.seg;
-            return (
-              <motion.button
-                key={t.seg}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => setConfig({ duracionSeg: t.seg })}
-                className={cn(
-                  "rounded-2xl py-3 font-mono font-bold border-2 border-[var(--color-borde)] transition",
-                  activa
-                    ? "bg-[var(--color-cian)] text-white shadow-[var(--shadow-brutal)]"
-                    : "bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)] active:translate-x-1 active:translate-y-1 active:shadow-none",
-                )}
-              >
-                {t.label}
               </motion.button>
             );
           })}

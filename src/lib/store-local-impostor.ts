@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ConfigPartida, Dificultad, RondaDatos } from "./types";
 import { buscarCategoria, CATEGORIAS } from "./palabras";
-import { elegirAleatorio, generarId, seleccionarImpostorAleatorio } from "./utils";
+import { elegirAleatorio, esMismaPalabra, generarId, seleccionarImpostorAleatorio } from "./utils";
 
 export type Fase = "config" | "reparto" | "discusion" | "votacion" | "resultado";
 
@@ -18,7 +18,12 @@ type Estado = {
   indiceReparto: number;
   finEn: number | null;
   votos: Record<string, string>;
-  resultado: { ganaImpostor: boolean; impostorNombre: string } | null;
+  resultado: {
+    ganaImpostor: boolean;
+    impostorNombre: string;
+    porAdivinanza?: boolean;
+    palabraIntento?: string;
+  } | null;
   agregarJugador: (nombre: string) => void;
   quitarJugador: (id: string) => void;
   renombrarJugador: (id: string, nombre: string) => void;
@@ -30,6 +35,7 @@ type Estado = {
   irAVotacion: () => void;
   registrarVoto: (votanteId: string, votadoId: string) => void;
   cerrarVotacion: () => void;
+  intentarAdivinanzaImpostor: (jugadorId: string, intento: string) => "acierto" | "fallo" | "no-eras-el-impostor";
   reiniciarRonda: () => void;
   volverAConfig: () => void;
 };
@@ -136,6 +142,25 @@ export const useJuegoLocal = create<Estado>()(
             impostorNombre: impostor?.nombre ?? "?",
           },
         });
+      },
+
+      intentarAdivinanzaImpostor: (jugadorId, intento) => {
+        const { ronda, jugadores, fase } = get();
+        if (!ronda || fase !== "discusion") return "no-eras-el-impostor";
+        if (jugadorId !== ronda.impostorId) return "no-eras-el-impostor";
+        const impostor = jugadores.find((j) => j.id === ronda.impostorId);
+        const acerto = esMismaPalabra(intento, ronda.palabra);
+        set({
+          fase: "resultado",
+          finEn: null,
+          resultado: {
+            ganaImpostor: acerto,
+            impostorNombre: impostor?.nombre ?? "?",
+            porAdivinanza: true,
+            palabraIntento: intento.slice(0, 60),
+          },
+        });
+        return acerto ? "acierto" : "fallo";
       },
 
       reiniciarRonda: () => {

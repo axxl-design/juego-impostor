@@ -14,7 +14,6 @@ type Estado = {
   fase: FaseQS;
   rondaActual: number;
   indiceReparto: number;
-  finEn: number | null;
   ultimaAdivinanza: {
     deId: string;
     deNombre: string;
@@ -24,7 +23,7 @@ type Estado = {
     palabraReal: string;
     acerto: boolean;
   } | null;
-  ganador: { tipo: "puntos" | "rondas"; ids: string[] } | null;
+  ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;
   agregarJugador: (nombre: string) => void;
   quitarJugador: (id: string) => void;
   reiniciarJugadores: () => void;
@@ -32,9 +31,8 @@ type Estado = {
   iniciarPartida: () => void;
   marcarVisto: (id: string) => void;
   avanzarReparto: () => void;
-  empezarRonda: () => void;
   intentarAdivinanza: (deId: string, aId: string, intento: string) => "acierto" | "fallo" | "fin";
-  rondaTerminada: () => void;
+  terminarPartida: () => void;
   jugarOtraVez: () => void;
   volverAConfig: () => void;
   limpiarUltimaAdivinanza: () => void;
@@ -43,7 +41,6 @@ type Estado = {
 const CONFIG_DEFAULT: ConfigQuienSoy = {
   categoriaId: CATEGORIAS[0].id,
   dificultad: "facil",
-  duracionSeg: 5 * 60,
   modoVictoria: "puntos",
   objetivo: 5,
 };
@@ -75,7 +72,6 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
       fase: "config",
       rondaActual: 0,
       indiceReparto: 0,
-      finEn: null,
       ultimaAdivinanza: null,
       ganador: null,
 
@@ -109,7 +105,6 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
           fase: "reparto",
           rondaActual: 1,
           indiceReparto: 0,
-          finEn: null,
           ultimaAdivinanza: null,
           ganador: null,
         });
@@ -121,24 +116,16 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
         })),
 
       avanzarReparto: () => {
-        const { indiceReparto, jugadores, config } = get();
+        const { indiceReparto, jugadores } = get();
         if (indiceReparto + 1 >= jugadores.length) {
-          set({
-            fase: "juego",
-            finEn: Date.now() + config.duracionSeg * 1000,
-          });
+          set({ fase: "juego" });
         } else {
           set({ indiceReparto: indiceReparto + 1 });
         }
       },
 
-      empezarRonda: () => {
-        const { config } = get();
-        set({ fase: "juego", finEn: Date.now() + config.duracionSeg * 1000 });
-      },
-
       intentarAdivinanza: (deId, aId, intento) => {
-        const { jugadores, config } = get();
+        const { jugadores, config, rondaActual } = get();
         const de = jugadores.find((j) => j.id === deId);
         const a = jugadores.find((j) => j.id === aId);
         if (!de || !a || de.id === a.id) return "fallo";
@@ -169,9 +156,16 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
             },
           });
           if (config.modoVictoria === "puntos" && ganador && ganador.puntos >= config.objetivo) {
-            set({ fase: "fin", ganador: { tipo: "puntos", ids: [deId] }, finEn: null });
+            set({ fase: "fin", ganador: { tipo: "puntos", ids: [deId] } });
             return "fin";
           }
+          if (config.modoVictoria === "rondas" && rondaActual >= config.objetivo) {
+            const max = Math.max(...nuevos.map((j) => j.puntos));
+            const ganadores = nuevos.filter((j) => j.puntos === max).map((j) => j.id);
+            set({ fase: "fin", ganador: { tipo: "rondas", ids: ganadores } });
+            return "fin";
+          }
+          set({ rondaActual: rondaActual + 1 });
           return "acierto";
         } else {
           const nuevos = jugadores.map((j) =>
@@ -193,35 +187,11 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
         }
       },
 
-      rondaTerminada: () => {
-        const { rondaActual, config, jugadores } = get();
-        if (config.modoVictoria === "rondas") {
-          if (rondaActual >= config.objetivo) {
-            const max = Math.max(...jugadores.map((j) => j.puntos));
-            const ganadores = jugadores.filter((j) => j.puntos === max).map((j) => j.id);
-            set({ fase: "fin", ganador: { tipo: "rondas", ids: ganadores }, finEn: null });
-            return;
-          }
-          const conPalabras = asignarPalabras(jugadores, config.categoriaId, config.dificultad);
-          set({
-            jugadores: conPalabras,
-            fase: "reparto",
-            rondaActual: rondaActual + 1,
-            indiceReparto: 0,
-            finEn: null,
-            ultimaAdivinanza: null,
-          });
-        } else {
-          const conPalabras = asignarPalabras(jugadores, config.categoriaId, config.dificultad);
-          set({
-            jugadores: conPalabras,
-            fase: "reparto",
-            rondaActual: rondaActual + 1,
-            indiceReparto: 0,
-            finEn: null,
-            ultimaAdivinanza: null,
-          });
-        }
+      terminarPartida: () => {
+        const { jugadores } = get();
+        const max = Math.max(0, ...jugadores.map((j) => j.puntos));
+        const ganadores = jugadores.filter((j) => j.puntos === max).map((j) => j.id);
+        set({ fase: "fin", ganador: { tipo: "terminada", ids: ganadores } });
       },
 
       jugarOtraVez: () => {
@@ -233,7 +203,6 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
           fase: "reparto",
           rondaActual: 1,
           indiceReparto: 0,
-          finEn: null,
           ultimaAdivinanza: null,
           ganador: null,
         });
@@ -244,7 +213,6 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
           fase: "config",
           rondaActual: 0,
           indiceReparto: 0,
-          finEn: null,
           ultimaAdivinanza: null,
           ganador: null,
         }),

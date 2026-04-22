@@ -1,57 +1,57 @@
 import type { ConfigQuienSoy, SalaQuienSoy } from "./types";
 import { buscarCategoria, CATEGORIAS } from "./palabras";
 import { esMismaPalabra, generarCodigoSala, generarId, mezclar } from "./utils";
+import {
+  normalizarCodigo,
+  storageDelete,
+  storageExists,
+  storageGet,
+  storageSet,
+} from "./sala-storage";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __salasQuienSoy: Map<string, SalaQuienSoy> | undefined;
-}
-
-const SALAS: Map<string, SalaQuienSoy> =
-  globalThis.__salasQuienSoy ?? new Map<string, SalaQuienSoy>();
-globalThis.__salasQuienSoy = SALAS;
-
-const TTL_MS = 1000 * 60 * 60 * 4;
-
-function limpiarSalas() {
-  const ahora = Date.now();
-  for (const [codigo, sala] of SALAS) {
-    if (ahora - sala.creadaEn > TTL_MS) SALAS.delete(codigo);
-  }
-}
+const NS = "quien-soy";
 
 const CONFIG_DEFAULT: ConfigQuienSoy = {
   categoriaId: CATEGORIAS[0].id,
   dificultad: "facil",
-  duracionSeg: 5 * 60,
   modoVictoria: "puntos",
   objetivo: 5,
 };
 
-export function crearSala(nombreHost: string): { sala: SalaQuienSoy; jugadorId: string } {
-  limpiarSalas();
+async function cargar(codigo: string): Promise<SalaQuienSoy | null> {
+  return storageGet<SalaQuienSoy>(NS, codigo);
+}
+
+async function guardar(sala: SalaQuienSoy): Promise<void> {
+  await storageSet(NS, sala.codigo, sala);
+}
+
+export async function crearSala(
+  nombreHost: string,
+): Promise<{ sala: SalaQuienSoy; jugadorId: string }> {
   let codigo = generarCodigoSala();
-  while (SALAS.has(codigo)) codigo = generarCodigoSala();
+  while (await storageExists(NS, codigo)) codigo = generarCodigoSala();
   const jugadorId = generarId();
   const sala: SalaQuienSoy = {
     codigo,
     hostId: jugadorId,
-    jugadores: [{ id: jugadorId, nombre: nombreHost.trim().slice(0, 20) || "Anfitrión", puntos: 0, haVisto: false }],
+    jugadores: [
+      { id: jugadorId, nombre: nombreHost.trim().slice(0, 20) || "Anfitrión", puntos: 0, haVisto: false },
+    ],
     palabras: {},
     config: { ...CONFIG_DEFAULT },
     fase: "lobby",
     rondaActual: 0,
-    finEn: null,
     ultimaAdivinanza: null,
     ganador: null,
     creadaEn: Date.now(),
   };
-  SALAS.set(codigo, sala);
+  await guardar(sala);
   return { sala, jugadorId };
 }
 
-export function obtenerSala(codigo: string): SalaQuienSoy | null {
-  return SALAS.get(codigo.toUpperCase()) ?? null;
+export async function obtenerSala(codigo: string): Promise<SalaQuienSoy | null> {
+  return cargar(normalizarCodigo(codigo));
 }
 
 export function vistaPublica(sala: SalaQuienSoy) {
@@ -62,7 +62,6 @@ export function vistaPublica(sala: SalaQuienSoy) {
     config: sala.config,
     fase: sala.fase,
     rondaActual: sala.rondaActual,
-    finEn: sala.finEn,
     ultimaAdivinanza: sala.ultimaAdivinanza,
     ganador: sala.ganador,
     categoriaNombre: buscarCategoria(sala.config.categoriaId)?.nombre ?? null,
@@ -77,8 +76,11 @@ export function vistaPalabra(sala: SalaQuienSoy, jugadorId: string) {
   };
 }
 
-export function unirse(codigo: string, nombre: string): { jugadorId: string } | { error: string } {
-  const sala = obtenerSala(codigo);
+export async function unirse(
+  codigo: string,
+  nombre: string,
+): Promise<{ jugadorId: string } | { error: string }> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return { error: "Sala no encontrada" };
   if (sala.fase !== "lobby") return { error: "La partida ya empezó" };
   if (sala.jugadores.length >= 6) return { error: "Sala llena (máx 6)" };
@@ -86,25 +88,32 @@ export function unirse(codigo: string, nombre: string): { jugadorId: string } | 
   if (!limpio) return { error: "Nombre inválido" };
   const id = generarId();
   sala.jugadores.push({ id, nombre: limpio, puntos: 0, haVisto: false });
+  await guardar(sala);
   return { jugadorId: id };
 }
 
-export function salir(codigo: string, jugadorId: string) {
-  const sala = obtenerSala(codigo);
+export async function salir(codigo: string, jugadorId: string): Promise<void> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return;
   sala.jugadores = sala.jugadores.filter((j) => j.id !== jugadorId);
   delete sala.palabras[jugadorId];
   if (sala.jugadores.length === 0) {
-    SALAS.delete(sala.codigo);
+    await storageDelete(NS, sala.codigo);
     return;
   }
   if (sala.hostId === jugadorId) sala.hostId = sala.jugadores[0].id;
+  await guardar(sala);
 }
 
-export function configurar(codigo: string, jugadorId: string, parcial: Partial<ConfigQuienSoy>) {
-  const sala = obtenerSala(codigo);
+export async function configurar(
+  codigo: string,
+  jugadorId: string,
+  parcial: Partial<ConfigQuienSoy>,
+): Promise<void> {
+  const sala = await obtenerSala(codigo);
   if (!sala || sala.hostId !== jugadorId) return;
   sala.config = { ...sala.config, ...parcial };
+  await guardar(sala);
 }
 
 function asignar(sala: SalaQuienSoy) {
@@ -127,29 +136,32 @@ function nuevaPalabraPara(sala: SalaQuienSoy, jugadorId: string) {
   sala.palabras[jugadorId] = fuente[Math.floor(Math.random() * fuente.length)];
 }
 
-export function iniciar(codigo: string, jugadorId: string): { error?: string } {
-  const sala = obtenerSala(codigo);
+export async function iniciar(
+  codigo: string,
+  jugadorId: string,
+): Promise<{ error?: string }> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return { error: "Sala no encontrada" };
   if (sala.hostId !== jugadorId) return { error: "Solo el anfitrión puede empezar" };
   if (sala.jugadores.length < 2) return { error: "Necesitan al menos 2 jugadores" };
   if (sala.jugadores.length > 6) return { error: "Máximo 6 jugadores" };
   sala.jugadores.forEach((j) => (j.puntos = 0));
   asignar(sala);
-  sala.fase = "juego";
+  sala.fase = "reparto";
   sala.rondaActual = 1;
-  sala.finEn = Date.now() + sala.config.duracionSeg * 1000;
   sala.ultimaAdivinanza = null;
   sala.ganador = null;
+  await guardar(sala);
   return {};
 }
 
-export function adivinar(
+export async function adivinar(
   codigo: string,
   deId: string,
   aId: string,
   intento: string,
-): { error?: string; acerto?: boolean; fin?: boolean } {
-  const sala = obtenerSala(codigo);
+): Promise<{ error?: string; acerto?: boolean; fin?: boolean }> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return { error: "Sala no encontrada" };
   if (sala.fase !== "juego") return { error: "No es momento de adivinar" };
   const de = sala.jugadores.find((j) => j.id === deId);
@@ -174,65 +186,77 @@ export function adivinar(
     de.puntos += 1;
     nuevaPalabraPara(sala, a.id);
     nuevaPalabraPara(sala, de.id);
+
     if (sala.config.modoVictoria === "puntos" && de.puntos >= sala.config.objetivo) {
       sala.fase = "fin";
-      sala.finEn = null;
       sala.ganador = { tipo: "puntos", ids: [de.id] };
+      await guardar(sala);
       return { acerto: true, fin: true };
     }
+
+    if (sala.config.modoVictoria === "rondas") {
+      if (sala.rondaActual >= sala.config.objetivo) {
+        const max = Math.max(...sala.jugadores.map((j) => j.puntos));
+        const ganadores = sala.jugadores.filter((j) => j.puntos === max).map((j) => j.id);
+        sala.fase = "fin";
+        sala.ganador = { tipo: "rondas", ids: ganadores };
+        await guardar(sala);
+        return { acerto: true, fin: true };
+      }
+      sala.rondaActual += 1;
+    } else {
+      sala.rondaActual += 1;
+    }
+    await guardar(sala);
     return { acerto: true };
   } else {
     de.puntos = Math.max(0, de.puntos - 1);
+    await guardar(sala);
     return { acerto: false };
   }
 }
 
-export function timeoutRonda(codigo: string): { error?: string; fin?: boolean } {
-  const sala = obtenerSala(codigo);
+export async function terminarPartida(
+  codigo: string,
+  jugadorId: string,
+): Promise<{ error?: string }> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return { error: "Sala no encontrada" };
-  if (sala.fase !== "juego") return {};
-  if (sala.finEn && Date.now() < sala.finEn) return {};
-
-  if (sala.config.modoVictoria === "rondas") {
-    if (sala.rondaActual >= sala.config.objetivo) {
-      const max = Math.max(...sala.jugadores.map((j) => j.puntos));
-      const ganadores = sala.jugadores.filter((j) => j.puntos === max).map((j) => j.id);
-      sala.fase = "fin";
-      sala.finEn = null;
-      sala.ganador = { tipo: "rondas", ids: ganadores };
-      return { fin: true };
-    }
-  }
-  asignar(sala);
-  sala.rondaActual += 1;
-  sala.fase = "reparto";
-  sala.finEn = null;
-  sala.ultimaAdivinanza = null;
+  if (sala.hostId !== jugadorId) return { error: "Solo el anfitrión puede terminar" };
+  if (sala.fase !== "juego" && sala.fase !== "reparto") return { error: "No hay partida en curso" };
+  const max = Math.max(0, ...sala.jugadores.map((j) => j.puntos));
+  const ganadores = sala.jugadores.filter((j) => j.puntos === max).map((j) => j.id);
+  sala.fase = "fin";
+  sala.ganador = { tipo: "terminada", ids: ganadores };
+  await guardar(sala);
   return {};
 }
 
-export function marcarPalabraVista(codigo: string, jugadorId: string) {
-  const sala = obtenerSala(codigo);
+export async function marcarPalabraVista(codigo: string, jugadorId: string): Promise<void> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return;
   const j = sala.jugadores.find((x) => x.id === jugadorId);
   if (!j) return;
   j.haVisto = true;
   if (sala.fase === "reparto" && sala.jugadores.every((x) => x.haVisto)) {
     sala.fase = "juego";
-    sala.finEn = Date.now() + sala.config.duracionSeg * 1000;
   }
+  await guardar(sala);
 }
 
-export function continuarHost(codigo: string, jugadorId: string) {
-  const sala = obtenerSala(codigo);
+export async function continuarHost(codigo: string, jugadorId: string): Promise<void> {
+  const sala = await obtenerSala(codigo);
   if (!sala || sala.hostId !== jugadorId) return;
   if (sala.fase !== "reparto") return;
   sala.fase = "juego";
-  sala.finEn = Date.now() + sala.config.duracionSeg * 1000;
+  await guardar(sala);
 }
 
-export function jugarOtraVez(codigo: string, jugadorId: string): { error?: string } {
-  const sala = obtenerSala(codigo);
+export async function jugarOtraVez(
+  codigo: string,
+  jugadorId: string,
+): Promise<{ error?: string }> {
+  const sala = await obtenerSala(codigo);
   if (!sala) return { error: "Sala no encontrada" };
   if (sala.hostId !== jugadorId) return { error: "Solo el anfitrión" };
   if (sala.fase !== "fin") return { error: "Partida en curso" };
@@ -241,20 +265,19 @@ export function jugarOtraVez(codigo: string, jugadorId: string): { error?: strin
     j.haVisto = false;
   });
   asignar(sala);
-  sala.fase = "juego";
+  sala.fase = "reparto";
   sala.rondaActual = 1;
-  sala.finEn = Date.now() + sala.config.duracionSeg * 1000;
   sala.ultimaAdivinanza = null;
   sala.ganador = null;
+  await guardar(sala);
   return {};
 }
 
-export function volverALobby(codigo: string, jugadorId: string) {
-  const sala = obtenerSala(codigo);
+export async function volverALobby(codigo: string, jugadorId: string): Promise<void> {
+  const sala = await obtenerSala(codigo);
   if (!sala || sala.hostId !== jugadorId) return;
   sala.fase = "lobby";
   sala.rondaActual = 0;
-  sala.finEn = null;
   sala.palabras = {};
   sala.ultimaAdivinanza = null;
   sala.ganador = null;
@@ -262,4 +285,5 @@ export function volverALobby(codigo: string, jugadorId: string) {
     j.puntos = 0;
     j.haVisto = false;
   });
+  await guardar(sala);
 }

@@ -6,7 +6,7 @@ import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2, Target } fr
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { CATEGORIAS } from "@/lib/palabras";
+import { CATEGORIAS_META } from "@/lib/categorias-meta";
 import type { Dificultad, ModoVictoria } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { olvidarJugadorIdQS } from "@/lib/use-sala-quien-soy";
@@ -17,14 +17,6 @@ const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
   { id: "facil", nombre: "Fácil", tono: "from-emerald-400 to-emerald-600" },
   { id: "medio", nombre: "Medio", tono: "from-amber-400 to-orange-500" },
   { id: "dificil", nombre: "Difícil", tono: "from-pink-500 to-fuchsia-600" },
-];
-
-const TIEMPOS = [
-  { seg: 120, label: "2m" },
-  { seg: 180, label: "3m" },
-  { seg: 300, label: "5m" },
-  { seg: 420, label: "7m" },
-  { seg: 600, label: "10m" },
 ];
 
 const MODOS: { id: ModoVictoria; nombre: string; sub: string; min: number; max: number; def: number }[] = [
@@ -179,7 +171,7 @@ export function LobbyOnlineQuienSoy({ sala, jugadorId, accion }: Props) {
       <section>
         <h2 className="font-display font-bold text-xl tracking-tight mb-3 px-1">Categoría</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {CATEGORIAS.map((c) => {
+          {CATEGORIAS_META.map((c) => {
             const activa = sala.config.categoriaId === c.id;
             return (
               <button
@@ -221,31 +213,6 @@ export function LobbyOnlineQuienSoy({ sala, jugadorId, accion }: Props) {
                 )}
               >
                 {d.nombre}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="font-display font-bold text-xl tracking-tight mb-3 px-1">Tiempo por ronda</h2>
-        <div className="grid grid-cols-5 gap-2">
-          {TIEMPOS.map((t) => {
-            const activa = sala.config.duracionSeg === t.seg;
-            return (
-              <button
-                key={t.seg}
-                disabled={!esHost}
-                onClick={() => accion({ tipo: "configurar", jugadorId, config: { duracionSeg: t.seg } })}
-                className={cn(
-                  "rounded-2xl py-3 font-mono font-bold border-2 border-[var(--color-borde)] transition",
-                  activa
-                    ? "bg-[var(--color-cian)] text-white shadow-[var(--shadow-brutal)]"
-                    : "bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)]",
-                  !esHost && "opacity-70",
-                )}
-              >
-                {t.label}
               </button>
             );
           })}

@@ -25,7 +25,7 @@ export default function QuienSoySalaPage({
   params: Promise<{ codigo: string }>;
 }) {
   const { codigo: codigoRaw } = use(params);
-  const codigo = codigoRaw.toUpperCase();
+  const codigo = codigoRaw.trim().toUpperCase();
   const router = useRouter();
   const [jugadorId, setJugadorId] = useState<string | null>(null);
   const [montado, setMontado] = useState(false);

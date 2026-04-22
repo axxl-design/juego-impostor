@@ -25,7 +25,12 @@
       "Bash(xargs -r kill)",
       "Bash(powershell -NoProfile -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue\")",
       "Bash(git add *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(xargs ls *)",
+      "Bash(sort -k5 -n -r)",
+      "Bash(npx next *)",
+      "Bash(grep -c \"pusher\" .next/static/chunks/0-vslesd9h1oy.js)",
+      "Bash(grep -c \"Pusher\" .next/static/chunks/0-vslesd9h1oy.js)"
     ]
   }
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { obtenerPusherCliente, pusherConfiguradoCliente } from "./pusher-client";
-import type { ConfigPartida } from "./types";
+import type { ConfigPartida, ResultadoImpostor } from "./types";
 
 export type SalaPublica = {
   codigo: string;
@@ -13,7 +13,7 @@ export type SalaPublica = {
   finEn: number | null;
   votosCount: number;
   votosPor: Record<string, string>;
-  resultado: { ganaImpostor: boolean; impostorId: string; impostorNombre: string } | null;
+  resultado: ResultadoImpostor | null;
   categoriaNombre: string | null;
 };
 

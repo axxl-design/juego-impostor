@@ -8,11 +8,12 @@ import {
   marcarPalabraVista,
   obtenerSala,
   salir,
-  timeoutRonda,
+  terminarPartida,
   unirse,
   vistaPublica,
   volverALobby,
 } from "@/lib/sala-store-quien-soy";
+import { normalizarCodigo } from "@/lib/sala-storage";
 import { broadcast } from "@/lib/pusher-server";
 
 export const runtime = "nodejs";
@@ -26,18 +27,19 @@ type Accion =
   | { tipo: "marcarVisto"; jugadorId: string }
   | { tipo: "continuar"; jugadorId: string }
   | { tipo: "adivinar"; jugadorId: string; aId: string; intento: string }
-  | { tipo: "timeoutRonda"; jugadorId: string }
+  | { tipo: "terminarPartida"; jugadorId: string }
   | { tipo: "jugarOtraVez"; jugadorId: string }
   | { tipo: "volverALobby"; jugadorId: string };
 
 export async function POST(req: Request, ctx: { params: Promise<{ codigo: string }> }) {
-  const { codigo } = await ctx.params;
+  const { codigo: codigoRaw } = await ctx.params;
+  const codigo = normalizarCodigo(codigoRaw);
   const body = (await req.json().catch(() => null)) as Accion | null;
   if (!body || !body.tipo) {
     return NextResponse.json({ error: "Falta acción" }, { status: 400 });
   }
 
-  const salaPre = obtenerSala(codigo);
+  const salaPre = await obtenerSala(codigo);
   if (!salaPre && body.tipo !== "unirse") {
     return NextResponse.json({ error: "Sala no encontrada" }, { status: 404 });
   }
@@ -47,56 +49,55 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
 
   switch (body.tipo) {
     case "unirse": {
-      const r = unirse(codigo, body.nombre);
+      const r = await unirse(codigo, body.nombre);
       if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
       extra = { jugadorId: r.jugadorId };
       break;
     }
     case "salir":
-      salir(codigo, body.jugadorId);
+      await salir(codigo, body.jugadorId);
       break;
     case "configurar":
-      configurar(codigo, body.jugadorId, body.config as never);
+      await configurar(codigo, body.jugadorId, body.config as never);
       break;
     case "iniciar": {
-      const r = iniciar(codigo, body.jugadorId);
+      const r = await iniciar(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       palabrasReasignadas = true;
       break;
     }
     case "marcarVisto":
-      marcarPalabraVista(codigo, body.jugadorId);
+      await marcarPalabraVista(codigo, body.jugadorId);
       break;
     case "continuar":
-      continuarHost(codigo, body.jugadorId);
+      await continuarHost(codigo, body.jugadorId);
       break;
     case "adivinar": {
-      const r = adivinar(codigo, body.jugadorId, body.aId, body.intento);
+      const r = await adivinar(codigo, body.jugadorId, body.aId, body.intento);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       extra = { acerto: r.acerto, fin: r.fin };
       if (r.acerto) palabrasReasignadas = true;
       break;
     }
-    case "timeoutRonda": {
-      const r = timeoutRonda(codigo);
+    case "terminarPartida": {
+      const r = await terminarPartida(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
-      palabrasReasignadas = true;
       break;
     }
     case "jugarOtraVez": {
-      const r = jugarOtraVez(codigo, body.jugadorId);
+      const r = await jugarOtraVez(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       palabrasReasignadas = true;
       break;
     }
     case "volverALobby":
-      volverALobby(codigo, body.jugadorId);
+      await volverALobby(codigo, body.jugadorId);
       break;
     default:
       return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });
   }
 
-  const sala = obtenerSala(codigo);
+  const sala = await obtenerSala(codigo);
   if (!sala) return NextResponse.json({ ok: true, ...extra });
   const publica = vistaPublica(sala);
   await broadcast(`quien-soy-${codigo}`, "estado-actualizado", publica);

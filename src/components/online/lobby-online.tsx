@@ -6,7 +6,7 @@ import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2 } from "luci
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { CATEGORIAS } from "@/lib/palabras";
+import { CATEGORIAS_META } from "@/lib/categorias-meta";
 import type { Dificultad } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { olvidarJugadorId } from "@/lib/use-sala-impostor";
@@ -173,7 +173,7 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
       <section>
         <h2 className="font-display font-bold text-xl tracking-tight mb-3 px-1">Categoría</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {CATEGORIAS.map((c) => {
+          {CATEGORIAS_META.map((c) => {
             const activa = sala.config.categoriaId === c.id;
             return (
               <button

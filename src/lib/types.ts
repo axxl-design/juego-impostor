@@ -41,7 +41,6 @@ export type ModoVictoria = "puntos" | "rondas";
 export type ConfigQuienSoy = {
   categoriaId: string;
   dificultad: Dificultad;
-  duracionSeg: number;
   modoVictoria: ModoVictoria;
   objetivo: number;
 };
@@ -62,7 +61,6 @@ export type SalaQuienSoy = {
   config: ConfigQuienSoy;
   fase: "lobby" | "reparto" | "juego" | "fin";
   rondaActual: number;
-  finEn: number | null;
   ultimaAdivinanza: {
     deId: string;
     deNombre: string;
@@ -73,8 +71,17 @@ export type SalaQuienSoy = {
     acerto: boolean;
     ts: number;
   } | null;
-  ganador: { tipo: "puntos" | "rondas"; ids: string[] } | null;
+  ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;
   creadaEn: number;
+};
+
+export type ResultadoImpostor = {
+  ganaImpostor: boolean;
+  impostorId: string;
+  impostorNombre: string;
+  porAdivinanza?: boolean;
+  palabraIntento?: string;
+  palabraReal?: string;
 };
 
 export type SalaOnline = {
@@ -86,6 +93,6 @@ export type SalaOnline = {
   fase: "lobby" | "reparto" | "discusion" | "votacion" | "resultado";
   finEn: number | null;
   votos: Record<string, string>;
-  resultado: { ganaImpostor: boolean; impostorId: string; impostorNombre: string } | null;
+  resultado: ResultadoImpostor | null;
   creadaEn: number;
 };

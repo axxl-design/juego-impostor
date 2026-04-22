@@ -102,6 +102,48 @@ Cualquier amigo abre la URL en su celular. El anfitrión crea la sala y comparte
 
 ---
 
+## 4. Configurar almacenamiento compartido (MUY IMPORTANTE si ya deployaste)
+
+Si tus amigos a veces reciben **"Sala no encontrada"** aunque la sala exista, es porque Vercel corre tu código en varias instancias distintas: la sala se crea en una, y el segundo jugador cae en otra que no la ve. Se arregla guardando las salas en una base de datos compartida. Es gratis con Upstash.
+
+### 4.1. Crear cuenta en Upstash
+
+1. Entrá a [console.upstash.com](https://console.upstash.com) y hacé clic en **Sign up**. Registrate con Google o GitHub (lo más rápido).
+2. Aceptá los términos.
+
+### 4.2. Crear la base de datos Redis
+
+1. En el panel, hacé clic en **Create Database**.
+2. **Name**: poné `vanny-salas` (o lo que quieras).
+3. **Primary Region**: elegí la más cercana a vos. Si estás en Sudamérica, elegí `South America (São Paulo)`. Si no, `US East (N. Virginia)` anda bien.
+4. **Type**: dejá `Regional` (la opción por defecto).
+5. Hacé clic en **Create**.
+
+### 4.3. Copiar las claves
+
+1. Al abrir la base, bajá a la sección **REST API**.
+2. Vas a ver dos líneas que dicen `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`. Hay un botón de copiar al lado de cada una.
+
+### 4.4. Pegar las claves en Vercel
+
+1. Entrá a tu proyecto en [vercel.com](https://vercel.com).
+2. **Settings → Environment Variables**.
+3. Agregá dos variables nuevas:
+   - Nombre: `UPSTASH_REDIS_REST_URL` — Valor: la URL que copiaste.
+   - Nombre: `UPSTASH_REDIS_REST_TOKEN` — Valor: el token que copiaste.
+4. Asegurate que estén marcadas para **Production**, **Preview** y **Development**.
+5. Guardá.
+
+### 4.5. Redeployar
+
+En Vercel, andá a **Deployments**, abrí el último y hacé clic en los tres puntos `...` → **Redeploy**. En un minuto queda actualizado.
+
+Listo. Ahora las salas viven en Redis y funcionan entre todas las instancias. El bug de "Sala no encontrada" desaparece.
+
+> **Nota:** si no configurás Upstash, la app sigue funcionando con un "Map en memoria" — está bien para jugar solo con una persona más en la misma ventana, pero con amigos reales en producción podés tener fallos. Seguí los pasos de arriba.
+
+---
+
 ## Estructura
 
 ```
@@ -140,7 +182,8 @@ Las rutas viejas (`/local`, `/online`, `/sala/:codigo`) redirigen automáticamen
 
 ## Resolución de problemas
 
-- **"No se pudo cargar la sala"** → el servidor se reinició (el estado vive en memoria). Volvé a crear la sala.
+- **"Sala no encontrada" aunque la sala exista** → estás en Vercel y no configuraste Upstash. Seguí el paso 4.
+- **"No se pudo cargar la sala"** → el servidor se reinició (si no usás Upstash, el estado vive en memoria). Volvé a crear la sala, o configurá Upstash (paso 4).
 - **El online va lento** → Pusher no está configurado. Seguí el paso 2.
 
 ---

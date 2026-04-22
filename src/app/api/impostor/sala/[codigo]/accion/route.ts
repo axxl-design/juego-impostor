@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   configurar,
   forzarCierre,
+  impostorAdivina,
   iniciar,
   nuevaRonda,
   obtenerSala,
@@ -11,6 +12,7 @@ import {
   vistaPublica,
   votar,
 } from "@/lib/sala-store-impostor";
+import { normalizarCodigo } from "@/lib/sala-storage";
 import { broadcast } from "@/lib/pusher-server";
 
 export const runtime = "nodejs";
@@ -24,16 +26,18 @@ type Accion =
   | { tipo: "pasarVotacion"; jugadorId: string }
   | { tipo: "votar"; jugadorId: string; votadoId: string }
   | { tipo: "cerrarVotacion"; jugadorId: string }
+  | { tipo: "impostorAdivina"; jugadorId: string; intento: string }
   | { tipo: "nuevaRonda"; jugadorId: string };
 
 export async function POST(req: Request, ctx: { params: Promise<{ codigo: string }> }) {
-  const { codigo } = await ctx.params;
+  const { codigo: codigoRaw } = await ctx.params;
+  const codigo = normalizarCodigo(codigoRaw);
   const body = (await req.json().catch(() => null)) as Accion | null;
   if (!body || !body.tipo) {
     return NextResponse.json({ error: "Falta acción" }, { status: 400 });
   }
 
-  const salaPre = obtenerSala(codigo);
+  const salaPre = await obtenerSala(codigo);
   if (!salaPre && body.tipo !== "unirse") {
     return NextResponse.json({ error: "Sala no encontrada" }, { status: 404 });
   }
@@ -42,33 +46,39 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
 
   switch (body.tipo) {
     case "unirse": {
-      const r = unirse(codigo, body.nombre);
+      const r = await unirse(codigo, body.nombre);
       if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
       extra = { jugadorId: r.jugadorId };
       break;
     }
     case "salir":
-      salir(codigo, body.jugadorId);
+      await salir(codigo, body.jugadorId);
       break;
     case "configurar":
-      configurar(codigo, body.jugadorId, body.config as never);
+      await configurar(codigo, body.jugadorId, body.config as never);
       break;
     case "iniciar": {
-      const r = iniciar(codigo, body.jugadorId);
+      const r = await iniciar(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       break;
     }
     case "pasarVotacion":
-      pasarAVotacion(codigo, body.jugadorId);
+      await pasarAVotacion(codigo, body.jugadorId);
       break;
     case "votar":
-      votar(codigo, body.jugadorId, body.votadoId);
+      await votar(codigo, body.jugadorId, body.votadoId);
       break;
     case "cerrarVotacion":
-      forzarCierre(codigo, body.jugadorId);
+      await forzarCierre(codigo, body.jugadorId);
       break;
+    case "impostorAdivina": {
+      const r = await impostorAdivina(codigo, body.jugadorId, body.intento);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      extra = { acerto: r.acerto };
+      break;
+    }
     case "nuevaRonda": {
-      const r = nuevaRonda(codigo, body.jugadorId);
+      const r = await nuevaRonda(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       break;
     }
@@ -76,7 +86,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
       return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });
   }
 
-  const sala = obtenerSala(codigo);
+  const sala = await obtenerSala(codigo);
   if (!sala) return NextResponse.json({ ok: true, ...extra });
   const publica = vistaPublica(sala);
   await broadcast(`impostor-${codigo}`, "estado-actualizado", publica);

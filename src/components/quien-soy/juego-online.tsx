@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
-import { Send, Check, X, Target, Trophy, Eye, RotateCcw, Home, HelpCircle } from "lucide-react";
+import { Send, Check, X, Target, Trophy, Eye, RotateCcw, Home, HelpCircle, Flag } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { cn, formatearTiempo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { lanzarConfetti } from "@/lib/confetti";
 import type { PalabraPrivada, SalaQuienSoyPublica } from "@/lib/use-sala-quien-soy";
 
 type Props = {
@@ -126,37 +126,14 @@ function Reparto({ sala, palabra, jugadorId, accion }: Props) {
 }
 
 function Juego({ sala, palabra, jugadorId, accion }: Props) {
-  const [restante, setRestante] = useState(sala.config.duracionSeg);
   const [aId, setAId] = useState<string>(sala.jugadores.find((j) => j.id !== jugadorId)?.id ?? "");
   const [intento, setIntento] = useState("");
   const [feedback, setFeedback] = useState<"acierto" | "fallo" | null>(null);
   const [verPalabra, setVerPalabra] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [confirmandoFin, setConfirmandoFin] = useState(false);
   const ultimaTs = useRef<number>(0);
-  const yaTermino = useRef(false);
   const esHost = sala.hostId === jugadorId;
-
-  useEffect(() => {
-    if (!sala.finEn) return;
-    yaTermino.current = false;
-    const tick = () => {
-      const ms = sala.finEn! - Date.now();
-      setRestante(Math.max(0, Math.ceil(ms / 1000)));
-    };
-    tick();
-    const id = setInterval(tick, 250);
-    return () => clearInterval(id);
-  }, [sala.finEn]);
-
-  useEffect(() => {
-    if (restante === 0 && sala.finEn && esHost && !yaTermino.current) {
-      yaTermino.current = true;
-      const t = setTimeout(() => {
-        accion({ tipo: "timeoutRonda", jugadorId }).catch(() => {});
-      }, 600);
-      return () => clearTimeout(t);
-    }
-  }, [restante, sala.finEn, esHost, accion, jugadorId]);
 
   useEffect(() => {
     if (!sala.ultimaAdivinanza) return;
@@ -164,18 +141,13 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
     ultimaTs.current = sala.ultimaAdivinanza.ts;
     if (sala.ultimaAdivinanza.acerto) {
       setFeedback("acierto");
-      const fin = Date.now() + 900;
-      const lanzar = () => {
-        confetti({
-          particleCount: 3,
-          startVelocity: 30,
-          spread: 70,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
-        });
-        if (Date.now() < fin) requestAnimationFrame(lanzar);
-      };
-      lanzar();
+      lanzarConfetti({
+        duracionMs: 900,
+        porTick: 3,
+        startVelocity: 30,
+        spread: 70,
+        colors: ["#a855f7", "#ec4899", "#06b6d4", "#10b981"],
+      });
     } else {
       setFeedback("fallo");
     }
@@ -202,8 +174,6 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
     }
   };
 
-  const peligro = restante <= 10;
-  const progreso = sala.config.duracionSeg > 0 ? restante / sala.config.duracionSeg : 0;
   const ranking = [...sala.jugadores].sort((a, b) => b.puntos - a.puntos);
 
   return (
@@ -215,16 +185,15 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
               ? `Primero a ${sala.config.objetivo} pts`
               : `Ronda ${sala.rondaActual}/${sala.config.objetivo}`}
           </div>
-          <div className={cn("font-mono font-bold text-3xl sm:text-4xl tabular-nums", peligro ? "text-[var(--color-peligro)]" : "text-gradient-primario")}>
-            {formatearTiempo(restante)}
-          </div>
-        </div>
-        <div className="h-2 rounded-full overflow-hidden border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)]">
-          <motion.div
-            className={cn("h-full", peligro ? "bg-[var(--color-peligro)]" : "gradient-primario")}
-            animate={{ width: `${progreso * 100}%` }}
-            transition={{ duration: 0.3, ease: "linear" }}
-          />
+          {esHost && (
+            <button
+              onClick={() => setConfirmandoFin(true)}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)] text-xs font-semibold hover:bg-[var(--color-peligro)] hover:text-white transition"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              Terminar partida
+            </button>
+          )}
         </div>
 
         <Card className="p-4 relative overflow-hidden">
@@ -379,6 +348,51 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmandoFin && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+            onClick={() => setConfirmandoFin(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm"
+            >
+              <Card className="p-6 text-center">
+                <div className="mx-auto grid place-items-center h-14 w-14 rounded-2xl bg-[var(--color-peligro)]/15 border-2 border-[var(--color-peligro)] mb-3">
+                  <Flag className="h-6 w-6 text-[var(--color-peligro)]" />
+                </div>
+                <h2 className="font-display font-bold text-xl">¿Terminar la partida?</h2>
+                <p className="mt-2 text-sm text-[var(--color-tinta-suave)]">
+                  Gana el que tenga más puntos en este momento.
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <Button variante="secundario" tamano="md" onClick={() => setConfirmandoFin(false)}>
+                    Seguir jugando
+                  </Button>
+                  <Button
+                    variante="peligro"
+                    tamano="md"
+                    onClick={async () => {
+                      setConfirmandoFin(false);
+                      await accion({ tipo: "terminarPartida", jugadorId }).catch(() => {});
+                    }}
+                  >
+                    Terminar
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -389,25 +403,20 @@ function Fin({ sala, jugadorId, accion }: Props) {
   const podio = ranking.slice(0, 3);
   const restantes = ranking.slice(3);
   const empate = (sala.ganador?.ids.length ?? 0) > 1;
+  const tipo = sala.ganador?.tipo;
 
   useEffect(() => {
     if (!sala.ganador) return;
     const top = ranking[0];
     const segundo = ranking[1];
     const ventaja = (top?.puntos ?? 0) - (segundo?.puntos ?? 0);
-    const cuanto = ventaja >= 3 ? 1800 : 900;
-    const fin = Date.now() + cuanto;
-    const lanzar = () => {
-      confetti({
-        particleCount: ventaja >= 3 ? 5 : 3,
-        startVelocity: ventaja >= 3 ? 40 : 30,
-        spread: ventaja >= 3 ? 90 : 70,
-        origin: { x: Math.random(), y: Math.random() * 0.4 },
-        colors: ["#a855f7", "#ec4899", "#06b6d4", "#f59e0b", "#10b981"],
-      });
-      if (Date.now() < fin) requestAnimationFrame(lanzar);
-    };
-    lanzar();
+    lanzarConfetti({
+      duracionMs: ventaja >= 3 ? 1800 : 900,
+      porTick: ventaja >= 3 ? 5 : 3,
+      startVelocity: ventaja >= 3 ? 40 : 30,
+      spread: ventaja >= 3 ? 90 : 70,
+      colors: ["#a855f7", "#ec4899", "#06b6d4", "#f59e0b", "#10b981"],
+    });
   }, [sala.ganador, ranking]);
 
   return (
@@ -422,7 +431,11 @@ function Fin({ sala, jugadorId, accion }: Props) {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo-elev)] shadow-[var(--shadow-brutal)] mb-4">
             <Trophy className="h-4 w-4 text-[var(--color-primario-500)]" />
             <span className="text-xs font-bold uppercase tracking-widest">
-              {sala.config.modoVictoria === "puntos" ? `Primero a ${sala.config.objetivo} pts` : `${sala.config.objetivo} rondas`}
+              {tipo === "terminada"
+                ? "Partida terminada"
+                : sala.config.modoVictoria === "puntos"
+                  ? `Primero a ${sala.config.objetivo} pts`
+                  : `${sala.config.objetivo} rondas`}
             </span>
           </div>
           <h1 className="font-display font-black text-4xl sm:text-5xl tracking-tight">
