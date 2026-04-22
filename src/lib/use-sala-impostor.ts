@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { obtenerPusherCliente, pusherConfiguradoCliente } from "./pusher-client";
-import type { ConfigPartida, ResultadoImpostor } from "./types";
+import type { ConfigPartida, PistaImpostor, PoderJugador, ResultadoImpostor } from "./types";
 
 export type SalaPublica = {
   codigo: string;
   hostId: string;
-  jugadores: { id: string; nombre: string }[];
+  jugadores: { id: string; nombre: string; puntos: number }[];
   config: ConfigPartida;
   fase: "lobby" | "reparto" | "discusion" | "votacion" | "resultado";
   finEn: number | null;
@@ -15,13 +15,22 @@ export type SalaPublica = {
   votosPor: Record<string, string>;
   resultado: ResultadoImpostor | null;
   categoriaNombre: string | null;
+  rondasJugadas: number;
+  contextoCivilUsado: boolean;
+  contextoCivilTexto: string | null;
+  acusacionDobleAgente: { deId: string; deNombre: string; aId: string; aNombre: string }[];
+  esJefeFinal: boolean;
 };
 
 export type RolPrivado = {
   esImpostor: boolean;
   palabra: string | null;
   categoriaNombre: string | null;
-  impostorCiego: boolean;
+  pistasPedidas: PistaImpostor[];
+  poder: PoderJugador | null;
+  palabraFalsa: string | null;
+  esJefeFinal: boolean;
+  haySegundoImpostor: boolean;
 } | null;
 
 export function useSala(codigo: string, jugadorId: string | null) {
@@ -79,15 +88,18 @@ export function useSala(codigo: string, jugadorId: string | null) {
       if (!p) return;
       const channel = p.subscribe(`impostor-${codigo}`);
       const handler = (publica: SalaPublica) => setSala(publica);
+      const handlerRol = () => { if (jugadorId) refrescarRol(); };
       channel.bind("estado-actualizado", handler);
+      channel.bind("roles-asignados", handlerRol);
       return () => {
         channel.unbind("estado-actualizado", handler);
+        channel.unbind("roles-asignados", handlerRol);
         p.unsubscribe(`impostor-${codigo}`);
       };
     }
     const id = setInterval(refrescar, 2500);
     return () => clearInterval(id);
-  }, [codigo, refrescar]);
+  }, [codigo, refrescar, refrescarRol, jugadorId]);
 
   const accion = useCallback(
     async (cuerpo: Record<string, unknown>) => {

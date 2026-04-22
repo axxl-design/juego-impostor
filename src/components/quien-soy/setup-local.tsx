@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Play, Users, Tag, Gauge, Trophy, Target } from "lucide-react";
+import { Plus, Trash2, Play, Users, Tag, Gauge, Trophy, Target, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { CATEGORIAS } from "@/lib/palabras";
 import { useJuegoQuienSoyLocal } from "@/lib/store-local-quien-soy";
 import type { Dificultad, ModoVictoria } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ReglasExtraQuienSoySeccion } from "@/components/juego/reglas-extra";
 
 const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
   { id: "facil", nombre: "Fácil", tono: "from-emerald-400 to-emerald-600" },
@@ -30,6 +31,7 @@ export function SetupLocalQuienSoy() {
     agregarJugador,
     quitarJugador,
     setConfig,
+    setReglasExtra,
     iniciarPartida,
   } = useJuegoQuienSoyLocal();
   const [nombre, setNombre] = useState("");
@@ -192,6 +194,10 @@ export function SetupLocalQuienSoy() {
             </div>
           </label>
         </Card>
+      </Section>
+
+      <Section icono={<Sparkles className="h-5 w-5" />} titulo="Reglas extra" sub="Opcionales">
+        <ReglasExtraQuienSoySeccion reglas={config.reglasExtra} onChange={setReglasExtra} />
       </Section>
 
       <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-4 pt-3 sm:pb-6 bg-gradient-to-t from-[var(--color-fondo)] via-[var(--color-fondo)] to-transparent">

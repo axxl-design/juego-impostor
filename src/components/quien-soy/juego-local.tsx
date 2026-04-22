@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Check, X, Target, Trophy, Flag } from "lucide-react";
+import { Send, Check, X, Target, Trophy, Flag, Lightbulb, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
@@ -16,8 +16,11 @@ export function JuegoLocalQuienSoy() {
     jugadores,
     config,
     rondaActual,
+    pistasUsadas,
     ultimaAdivinanza,
     intentarAdivinanza,
+    pedirPista,
+    comprarEscudo,
     terminarPartida,
     limpiarUltimaAdivinanza,
   } = useJuegoQuienSoyLocal();
@@ -27,6 +30,7 @@ export function JuegoLocalQuienSoy() {
   const [intento, setIntento] = useState("");
   const [feedback, setFeedback] = useState<"acierto" | "fallo" | null>(null);
   const [confirmandoFin, setConfirmandoFin] = useState(false);
+  const [pistaMostrada, setPistaMostrada] = useState<{ nombre: string; texto: string } | null>(null);
 
   useEffect(() => {
     if (!ultimaAdivinanza) return;
@@ -107,7 +111,10 @@ export function JuegoLocalQuienSoy() {
                   #{i + 1}
                 </span>
                 <Avatar nombre={j.nombre} tamano={36} />
-                <span className="font-semibold flex-1 truncate">{j.nombre}</span>
+                <span className="font-semibold flex-1 truncate">
+                  {j.nombre}
+                  {j.escudo && <span className="ml-1">🛡️</span>}
+                </span>
                 <motion.span
                   key={j.puntos}
                   initial={{ scale: 1.4 }}
@@ -121,6 +128,41 @@ export function JuegoLocalQuienSoy() {
             ))}
           </ul>
         </Card>
+
+        {(config.reglasExtra.pistasActivas || config.reglasExtra.escudoComprable) && (
+          <Card className="p-4">
+            <div className="text-xs uppercase tracking-widest text-[var(--color-tinta-suave)] mb-2 px-1 font-bold">Acciones del jugador activo</div>
+            <div className="grid grid-cols-2 gap-2">
+              {config.reglasExtra.pistasActivas && (
+                <button
+                  onClick={() => {
+                    const p = pedirPista(deId);
+                    if (p) {
+                      const j = jugadores.find((x) => x.id === deId);
+                      setPistaMostrada({ nombre: j?.nombre ?? "", texto: p.texto });
+                      setTimeout(() => setPistaMostrada(null), 4500);
+                    }
+                  }}
+                  disabled={(pistasUsadas[deId] ?? 0) >= 3 || (jugadores.find((j) => j.id === deId)?.puntos ?? 0) <= 0}
+                  className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--color-primario-500)]/60 bg-[var(--color-primario-500)]/10 text-[var(--color-primario-500)] text-xs font-semibold hover:bg-[var(--color-primario-500)]/20 transition disabled:opacity-40"
+                >
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Pista ({pistasUsadas[deId] ?? 0}/3) -1pt
+                </button>
+              )}
+              {config.reglasExtra.escudoComprable && (
+                <button
+                  onClick={() => comprarEscudo(deId)}
+                  disabled={(jugadores.find((j) => j.id === deId)?.puntos ?? 0) < 5 || (jugadores.find((j) => j.id === deId)?.escudo ?? false)}
+                  className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--color-cian)]/60 bg-[var(--color-cian)]/10 text-[var(--color-cian)] text-xs font-semibold hover:bg-[var(--color-cian)]/20 transition disabled:opacity-40"
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  Comprar escudo (2 pts)
+                </button>
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -176,6 +218,24 @@ export function JuegoLocalQuienSoy() {
       </div>
 
       <AnimatePresence>
+        {pistaMostrada && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-4 right-4 z-30 max-w-md mx-auto"
+          >
+            <Card className="p-4 bg-[var(--color-primario-500)] text-white">
+              <div className="text-xs uppercase tracking-widest opacity-80">
+                <Lightbulb className="h-3 w-3 inline mr-1" /> Pista para {pistaMostrada.nombre}
+              </div>
+              <div className="font-display font-bold text-lg mt-1">{pistaMostrada.texto}</div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {feedback && ultimaAdivinanza && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -225,7 +285,9 @@ export function JuegoLocalQuienSoy() {
                   </div>
                 ) : (
                   <div className="mt-3 text-sm opacity-90">
-                    -1 pt para {ultimaAdivinanza.deNombre}
+                    {ultimaAdivinanza.escudoUsado
+                      ? `🛡️ Escudo usado — no perdió puntos`
+                      : `-1 pt para ${ultimaAdivinanza.deNombre}`}
                   </div>
                 )}
               </Card>

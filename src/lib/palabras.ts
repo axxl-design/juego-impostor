@@ -1,5 +1,20 @@
 import type { Categoria } from "./types";
 
+/**
+ * Las palabras se almacenan como strings planos por simplicidad.
+ *
+ * Para el sistema de pistas, cada palabra puede enriquecerse OPCIONALMENTE en
+ * `palabras-meta.ts` con dos campos:
+ *   - `relacionada`: palabra asociada usada como pista nivel 3 al impostor
+ *     (ej: "Messi" → "Argentina").
+ *   - `contextoCivil`: descripción corta para los civiles sin revelar la palabra
+ *     (ej: "Deportista argentino...").
+ *
+ * Si no hay metadato, el sistema cae a fallbacks automáticos basados en
+ * la categoría y la dificultad. No hace falta enriquecer las 2700+ palabras:
+ * se van agregando las que el usuario quiera destacar.
+ */
+
 export const CATEGORIAS: Categoria[] = [
   {
     id: "lugares",

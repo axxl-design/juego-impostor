@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, ArrowRight, VenetianMask } from "lucide-react";
+import { Eye, ArrowRight, VenetianMask, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useJuegoLocal } from "@/lib/store-local-impostor";
+import { PoderCard } from "@/components/juego/poder-card";
 
 export function RepartoLocal() {
   const { jugadores, indiceReparto, ronda, avanzarReparto } = useJuegoLocal();
@@ -14,12 +15,26 @@ export function RepartoLocal() {
   if (!ronda) return null;
   const jugador = jugadores[indiceReparto];
   if (!jugador) return null;
-  const esImpostor = jugador.id === ronda.impostorId;
+  const impostores = [ronda.impostorId, ...(ronda.impostoresExtra ?? [])];
+  const esImpostor = impostores.includes(jugador.id);
   const ultimo = indiceReparto === jugadores.length - 1;
+  const miPoder = ronda.poderes?.find((p) => p.jugadorId === jugador.id) ?? null;
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center px-4 sm:px-6 pb-12">
       <div className="w-full max-w-md">
+        {ronda.esJefeFinal && (
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="mb-4 text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-red-500 text-white font-black text-xs uppercase tracking-widest shadow-[var(--shadow-brutal)] border-2 border-[var(--color-borde)]">
+              <Crown className="h-4 w-4" />
+              RONDA JEFE FINAL · 2x puntos
+            </div>
+          </motion.div>
+        )}
         <div className="text-center mb-6">
           <div className="text-sm font-mono uppercase tracking-widest text-[var(--color-tinta-suave)]">
             Jugador {indiceReparto + 1} de {jugadores.length}
@@ -81,17 +96,17 @@ export function RepartoLocal() {
                 >
                   IMPOSTOR
                 </motion.div>
-                {!ronda.impostorCiego ? (
-                  <p className="text-white/85 max-w-xs">
-                    Sabés que la categoría es{" "}
-                    <span className="font-bold text-white">{ronda.categoriaNombre}</span>
-                    , pero no la palabra. Disimulá.
-                  </p>
-                ) : (
-                  <p className="text-white/85 max-w-xs">
-                    No sabés ni la categoría. Mucha suerte.
-                  </p>
+                <p className="text-white/85 max-w-xs">
+                  Sabés que la categoría es{" "}
+                  <span className="font-bold text-white">{ronda.categoriaNombre}</span>
+                  , pero no la palabra. Disimulá.
+                </p>
+                {(ronda.impostoresExtra?.length ?? 0) > 0 && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/15 border-2 border-red-500/40 text-red-300 text-xs font-bold uppercase tracking-widest">
+                    Hay otro impostor — no sabés quién
+                  </div>
                 )}
+                {miPoder && <PoderCard poder={miPoder} />}
                 <BotonSiguiente onClick={() => { setRevelado(false); avanzarReparto(); }} ultimo={ultimo} />
               </div>
             </motion.div>
@@ -121,9 +136,18 @@ export function RepartoLocal() {
                 >
                   {ronda.palabra}
                 </div>
+                {miPoder?.tipo === "traductor" && miPoder.datos?.palabraFalsa && (
+                  <div className="w-full p-3 rounded-xl border-2 border-dashed border-[var(--color-cian)] bg-[var(--color-cian)]/10 text-sm">
+                    <div className="text-xs uppercase tracking-widest text-[var(--color-cian)] font-bold mb-1">
+                      📖 Traductor — Palabra falsa extra
+                    </div>
+                    <div className="font-display font-bold text-lg">{miPoder.datos.palabraFalsa}</div>
+                  </div>
+                )}
                 <p className="text-sm text-[var(--color-tinta-suave)]">
                   Memorizala. Vas a tener que disimular para que el impostor no la adivine.
                 </p>
+                {miPoder && miPoder.tipo !== "traductor" && <PoderCard poder={miPoder} />}
                 <BotonSiguiente onClick={() => { setRevelado(false); avanzarReparto(); }} ultimo={ultimo} />
               </div>
             </motion.div>

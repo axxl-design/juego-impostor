@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import {
   adivinar,
+  comprarEscudoQuienSoy,
   configurar,
   continuarHost,
   iniciar,
   jugarOtraVez,
   marcarPalabraVista,
   obtenerSala,
+  pedirPistaQuienSoy,
   salir,
   terminarPartida,
   unirse,
@@ -29,7 +31,9 @@ type Accion =
   | { tipo: "adivinar"; jugadorId: string; aId: string; intento: string }
   | { tipo: "terminarPartida"; jugadorId: string }
   | { tipo: "jugarOtraVez"; jugadorId: string }
-  | { tipo: "volverALobby"; jugadorId: string };
+  | { tipo: "volverALobby"; jugadorId: string }
+  | { tipo: "pedirPista"; jugadorId: string }
+  | { tipo: "comprarEscudo"; jugadorId: string };
 
 export async function POST(req: Request, ctx: { params: Promise<{ codigo: string }> }) {
   const { codigo: codigoRaw } = await ctx.params;
@@ -93,6 +97,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
     case "volverALobby":
       await volverALobby(codigo, body.jugadorId);
       break;
+    case "pedirPista": {
+      const r = await pedirPistaQuienSoy(codigo, body.jugadorId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      extra = { texto: r.texto };
+      break;
+    }
+    case "comprarEscudo": {
+      const r = await comprarEscudoQuienSoy(codigo, body.jugadorId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      break;
+    }
     default:
       return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });
   }

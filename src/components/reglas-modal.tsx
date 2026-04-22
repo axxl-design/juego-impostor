@@ -1,0 +1,131 @@
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { Card } from "./ui/card";
+
+type Props = {
+  abierto: boolean;
+  onCerrar: () => void;
+};
+
+export function ReglasModal({ abierto, onCerrar }: Props) {
+  return (
+    <AnimatePresence>
+      {abierto && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8 overflow-y-auto"
+          onClick={onCerrar}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 240, damping: 22 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl my-auto"
+          >
+            <Card className="p-6 sm:p-8 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-[var(--color-tinta-suave)]">Ayuda</div>
+                  <h2 className="font-display font-black text-2xl sm:text-3xl tracking-tight">Cómo jugar</h2>
+                </div>
+                <button
+                  onClick={onCerrar}
+                  aria-label="Cerrar"
+                  className="h-9 w-9 rounded-xl border-2 border-[var(--color-borde)] grid place-items-center hover:bg-[var(--color-fondo)] transition shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <Seccion titulo="🎭 El Juego del Impostor">
+                <p>Uno de los jugadores es el <strong>impostor</strong>: los demás saben una palabra; él solo sabe la categoría.
+                Durante la discusión, todos se hacen preguntas disimuladas. Al votar, si descubren al impostor ganan los civiles; si
+                no, gana el impostor. El impostor también puede arriesgarse a adivinar la palabra y ganar instantáneamente.</p>
+              </Seccion>
+
+              <Seccion titulo="❓ ¿Quién Soy?">
+                <p>Cada jugador recibe una palabra secreta (un personaje, objeto, lugar...). Se hacen preguntas entre ellos para
+                descubrir qué les tocó. Adivinar suma 1 punto, fallar resta 1 (mínimo 0). Gana el primero en llegar al objetivo
+                de puntos o quien tenga más al terminar las rondas.</p>
+              </Seccion>
+
+              <Divisor />
+
+              <Seccion titulo="Reglas extra del Impostor (opcionales)">
+                <ul className="space-y-2">
+                  <Li emoji="💡" nombre="Pistas">
+                    El impostor puede pedir hasta 3 pistas (letra inicial, cantidad de letras, palabra relacionada).
+                    Cada una cuesta 1 punto. Los civiles pueden pedir un contexto colectivo una vez por ronda.
+                  </Li>
+                  <Li emoji="🏆" nombre="Puntaje persistente">
+                    Se suman puntos ronda a ronda. +3 civil que vota bien · +5 impostor que sobrevive · +7 impostor que adivina · +1 víctima (voto erróneo).
+                  </Li>
+                  <Li emoji="🎯" nombre="Robo de puntos">
+                    Cuando un civil vota bien al impostor, le roba 2 puntos. Requiere Puntaje persistente.
+                  </Li>
+                  <Li emoji="⚡" nombre="Poderes aleatorios">
+                    1-2 jugadores reciben un poder secreto por ronda: <em>Vidente</em> (ve el voto de otro),
+                    <em> Escudo</em> (los votos contra él valen la mitad), <em>Doble agente</em> (acusa falsamente antes de votar),
+                    <em> Traductor</em> (ve una palabra falsa extra para despistar).
+                  </Li>
+                  <Li emoji="💬" nombre="Preguntas sugeridas">
+                    Panel plegable durante la discusión con preguntas neutras para romper el hielo.
+                  </Li>
+                  <Li emoji="👑" nombre="Jefe Final cada 5 rondas">
+                    Ronda especial con 2 impostores (no saben quién es el otro), categoría Mezcla total y puntaje duplicado. Requiere Puntaje persistente.
+                  </Li>
+                </ul>
+              </Seccion>
+
+              <Seccion titulo="Reglas extra de ¿Quién Soy? (opcionales)">
+                <ul className="space-y-2">
+                  <Li emoji="💡" nombre="Pistas">
+                    Cada jugador puede pedir hasta 3 pistas sobre su propia palabra. Cada una cuesta 1 punto (mínimo 1 pt para pedir).
+                  </Li>
+                  <Li emoji="🛡️" nombre="Escudo comprable">
+                    Con 5+ puntos podés comprar un escudo por 2 puntos. Evita el próximo fallo (no se suman -1). Solo 1 activo a la vez.
+                  </Li>
+                </ul>
+              </Seccion>
+
+              <p className="mt-6 text-xs text-[var(--color-tinta-suave)] text-center">
+                Todas las reglas extra son opt-in: si no las activás, el juego funciona como siempre.
+              </p>
+            </Card>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-5 first:mt-0">
+      <h3 className="font-display font-bold text-lg mb-2">{titulo}</h3>
+      <div className="text-sm leading-relaxed text-[var(--color-tinta)]">{children}</div>
+    </section>
+  );
+}
+
+function Li({ emoji, nombre, children }: { emoji: string; nombre: string; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3 items-start">
+      <span className="text-xl leading-none shrink-0">{emoji}</span>
+      <span>
+        <strong className="font-bold">{nombre}.</strong>{" "}
+        <span className="text-[var(--color-tinta-suave)]">{children}</span>
+      </span>
+    </li>
+  );
+}
+
+function Divisor() {
+  return <div className="my-5 h-px bg-[var(--color-borde)] opacity-30" />;
+}

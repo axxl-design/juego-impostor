@@ -11,10 +11,19 @@ Hecha con Next.js, TypeScript, Tailwind CSS y Pusher.
 ### 🎭 El Juego del Impostor
 Uno de los jugadores es el impostor secreto: los demás saben una palabra (por ejemplo, *Volcán*) y tienen que descubrir quién no la sabe antes de que se acabe el tiempo.
 
-- **15 categorías · 2-8 jugadores · Local + Online**
+- **15 categorías · 3-10 jugadores · Local + Online**
 - Modo "Un dispositivo": se pasan el celular de mano en mano.
 - Modo "Online": cada uno desde su celular, con código de sala.
-- Opcional: "Impostor a ciegas" — el impostor tampoco ve la categoría.
+- El impostor ve la categoría pero no la palabra. Puede arriesgarse a adivinar y ganar instantáneamente.
+
+**Reglas extra (opt-in, se combinan libremente):**
+
+- 💡 **Pistas** · El impostor puede pedir hasta 3 pistas (letra inicial, cantidad de letras, palabra relacionada) pagando 1 pt c/u. Los civiles pueden pedir un contexto colectivo 1 vez por ronda.
+- 🏆 **Puntaje persistente** · Se suman puntos ronda a ronda con leaderboard (+3 civil correcto, +5 impostor sobreviviente, +7 impostor que adivina, +1 víctima).
+- 🎯 **Robo de puntos** · El civil que vota bien le roba 2 pts al impostor. Requiere Puntaje persistente.
+- ⚡ **Poderes aleatorios** · 1-2 jugadores reciben un poder secreto por ronda (Vidente, Escudo, Doble agente, Traductor).
+- 💬 **Preguntas sugeridas** · Panel plegable con preguntas neutras para romper el hielo.
+- 👑 **Jefe Final cada 5 rondas** · Ronda especial con 2 impostores, categoría Mezcla total y puntaje x2. Requiere Puntaje persistente.
 
 ### ❓ ¿Quién Soy?
 Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse preguntas cara a cara o por chat externo y traten de adivinar lo que tiene el otro.
@@ -23,7 +32,20 @@ Cada jugador recibe una palabra/personaje secreta de una categoría. Háganse pr
 - Cuando un jugador adivina lo que tiene otro, suma 1 punto. Si falla, pierde 1 (mín 0).
 - Comparación flexible: ignora mayúsculas, tildes, espacios y permite hasta 2 errores de tipeo.
 - Dos modos de victoria: "primero a X puntos" o "X rondas".
-- Tiempo configurable por ronda (2 a 10 minutos).
+
+**Reglas extra (opt-in):**
+
+- 💡 **Pistas** · Cada jugador puede pedir hasta 3 pistas sobre su propia palabra. Cada una cuesta 1 pt (mín 1 pt para pedirla).
+- 🛡️ **Escudo comprable** · Con 5+ pts podés comprar un escudo por 2 pts. Evita el próximo fallo.
+
+### Sistema de pistas: enriquecer palabras
+
+Las palabras de `src/lib/palabras.ts` se pueden enriquecer en `src/lib/palabras-meta.ts` con dos campos opcionales por palabra:
+
+- `relacionada` — palabra asociada que aparece como pista nivel 3 del impostor (ej: "Messi" → "Argentina").
+- `contextoCivil` — descripción corta para los civiles sin revelar la palabra (ej: "Deportista argentino, uno de los más destacados de su disciplina").
+
+No hace falta enriquecer las 2700+ palabras: si no hay meta, el sistema usa fallbacks automáticos por categoría.
 
 ---
 
@@ -178,7 +200,8 @@ Las rutas viejas (`/local`, `/online`, `/sala/:codigo`) redirigen automáticamen
 
 - Las salas online se autodestruyen después de 4 horas sin actividad.
 - En "¿Quién Soy?" la comparación es flexible: si la palabra es "Leonardo da Vinci", aceptan "leonardo da vinci", "davinci", "da vinci", etc.
-- Modo experto del impostor: "Impostor a ciegas" — ni siquiera ve la categoría.
+- Las reglas extra son todas opcionales: si no activás ninguna, los juegos funcionan igual de simples que siempre.
+- El ícono **?** del header abre el modal "Cómo jugar" con todas las reglas explicadas.
 
 ## Resolución de problemas
 

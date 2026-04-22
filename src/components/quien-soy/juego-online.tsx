@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Check, X, Target, Trophy, Eye, RotateCcw, Home, HelpCircle, Flag } from "lucide-react";
+import { Send, Check, X, Target, Trophy, Eye, RotateCcw, Home, HelpCircle, Flag, Lightbulb, Shield } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -132,8 +132,27 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
   const [verPalabra, setVerPalabra] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [confirmandoFin, setConfirmandoFin] = useState(false);
+  const [pistaMostrada, setPistaMostrada] = useState<string | null>(null);
   const ultimaTs = useRef<number>(0);
   const esHost = sala.hostId === jugadorId;
+  const reglas = sala.config.reglasExtra ?? { pistasActivas: false, escudoComprable: false };
+  const miJugador = sala.jugadores.find((j) => j.id === jugadorId);
+  const miPistas = sala.pistasUsadas?.[jugadorId] ?? 0;
+
+  const pedirPistaMia = async () => {
+    try {
+      const r = await accion({ tipo: "pedirPista", jugadorId }) as { texto?: string };
+      if (r?.texto) {
+        setPistaMostrada(r.texto);
+        setTimeout(() => setPistaMostrada(null), 4500);
+      }
+    } catch {}
+  };
+  const comprarEscudoMio = async () => {
+    try {
+      await accion({ tipo: "comprarEscudo", jugadorId });
+    } catch {}
+  };
 
   useEffect(() => {
     if (!sala.ultimaAdivinanza) return;
@@ -240,6 +259,7 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
                 <Avatar nombre={j.nombre} tamano={36} />
                 <span className="font-semibold flex-1 truncate">
                   {j.nombre}
+                  {j.escudo && <span className="ml-1">🛡️</span>}
                   {j.id === jugadorId && (
                     <span className={cn("ml-2 text-xs font-normal", i === 0 && j.puntos > 0 ? "text-white/80" : "text-[var(--color-tinta-suave)]")}>(vos)</span>
                   )}
@@ -257,6 +277,34 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
             ))}
           </ul>
         </Card>
+
+        {(reglas.pistasActivas || reglas.escudoComprable) && (
+          <Card className="p-4">
+            <div className="text-xs uppercase tracking-widest text-[var(--color-tinta-suave)] mb-2 px-1 font-bold">Tus acciones</div>
+            <div className="grid grid-cols-2 gap-2">
+              {reglas.pistasActivas && (
+                <button
+                  onClick={pedirPistaMia}
+                  disabled={miPistas >= 3 || (miJugador?.puntos ?? 0) <= 0}
+                  className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--color-primario-500)]/60 bg-[var(--color-primario-500)]/10 text-[var(--color-primario-500)] text-xs font-semibold hover:bg-[var(--color-primario-500)]/20 transition disabled:opacity-40"
+                >
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Pista ({miPistas}/3) -1pt
+                </button>
+              )}
+              {reglas.escudoComprable && (
+                <button
+                  onClick={comprarEscudoMio}
+                  disabled={(miJugador?.puntos ?? 0) < 5 || (miJugador?.escudo ?? false)}
+                  className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--color-cian)]/60 bg-[var(--color-cian)]/10 text-[var(--color-cian)] text-xs font-semibold hover:bg-[var(--color-cian)]/20 transition disabled:opacity-40"
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  Escudo (2 pts)
+                </button>
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -294,6 +342,24 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
           </form>
         </Card>
       </div>
+
+      <AnimatePresence>
+        {pistaMostrada && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-4 right-4 z-30 max-w-md mx-auto"
+          >
+            <Card className="p-4 bg-[var(--color-primario-500)] text-white">
+              <div className="text-xs uppercase tracking-widest opacity-80">
+                <Lightbulb className="h-3 w-3 inline mr-1" /> Pista sobre tu palabra
+              </div>
+              <div className="font-display font-bold text-lg mt-1">{pistaMostrada}</div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {feedback && sala.ultimaAdivinanza && (
@@ -341,7 +407,9 @@ function Juego({ sala, palabra, jugadorId, accion }: Props) {
                     Era <span className="font-bold">{sala.ultimaAdivinanza.palabraReal}</span> · +1 pt
                   </div>
                 ) : (
-                  <div className="mt-3 text-sm opacity-90">-1 pt</div>
+                  <div className="mt-3 text-sm opacity-90">
+                    {sala.ultimaAdivinanza.escudoUsado ? "🛡️ Escudo usado — no perdió puntos" : "-1 pt"}
+                  </div>
                 )}
               </Card>
             </motion.div>

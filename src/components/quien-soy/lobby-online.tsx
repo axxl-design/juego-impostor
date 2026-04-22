@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2, Target } from "lucide-react";
+import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2, Target, Sparkles } from "lucide-react";
+import { ReglasExtraQuienSoySeccion } from "@/components/juego/reglas-extra";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
@@ -270,6 +271,19 @@ export function LobbyOnlineQuienSoy({ sala, jugadorId, accion }: Props) {
             </div>
           </label>
         </Card>
+      </section>
+
+      <section>
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <span className="text-[var(--color-primario-500)]"><Sparkles className="h-5 w-5" /></span>
+          <h2 className="font-display font-bold text-xl tracking-tight">Reglas extra</h2>
+          <span className="text-sm text-[var(--color-tinta-suave)] ml-auto">Opcionales</span>
+        </div>
+        <ReglasExtraQuienSoySeccion
+          reglas={sala.config.reglasExtra ?? { pistasActivas: false, escudoComprable: false }}
+          disabled={!esHost}
+          onChange={(parcial) => accion({ tipo: "configurar", jugadorId, config: { reglasExtra: parcial } })}
+        />
       </section>
 
       {!esHost && (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Play, Users, Tag, Gauge, Clock, EyeOff } from "lucide-react";
+import { Plus, Trash2, Play, Users, Tag, Gauge, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { CATEGORIAS } from "@/lib/palabras";
 import { useJuegoLocal } from "@/lib/store-local-impostor";
 import type { Dificultad } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ReglasExtraImpostorSeccion } from "@/components/juego/reglas-extra";
 
 const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
   { id: "facil", nombre: "Fácil", tono: "from-emerald-400 to-emerald-600" },
@@ -33,6 +34,7 @@ export function SetupLocal() {
     agregarJugador,
     quitarJugador,
     setConfig,
+    setReglasExtra,
     iniciarPartida,
   } = useJuegoLocal();
   const [nombre, setNombre] = useState("");
@@ -81,6 +83,11 @@ export function SetupLocal() {
                 >
                   <Avatar nombre={j.nombre} tamano={36} />
                   <span className="flex-1 font-medium truncate">{j.nombre}</span>
+                  {config.reglasExtra.puntajePersistente && (
+                    <span className="font-mono font-bold text-sm tabular-nums text-[var(--color-primario-500)] mr-1">
+                      {j.puntos}pt
+                    </span>
+                  )}
                   <button
                     onClick={() => quitarJugador(j.id)}
                     className="h-9 w-9 rounded-xl border-2 border-[var(--color-borde)] flex items-center justify-center hover:bg-[var(--color-peligro)] hover:text-white transition"
@@ -173,27 +180,9 @@ export function SetupLocal() {
         </div>
       </Section>
 
-      {/* Modo difícil */}
-      <Section icono={<EyeOff className="h-5 w-5" />} titulo="Modo experto">
-        <Card className="p-4">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.impostorCiego}
-              onChange={(e) => setConfig({ impostorCiego: e.target.checked })}
-              className="sr-only peer"
-            />
-            <span className="relative w-12 h-7 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo)] peer-checked:gradient-primario transition-colors">
-              <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white border-2 border-[var(--color-borde)] rounded-full peer-checked:translate-x-5 transition-transform" />
-            </span>
-            <span className="flex-1">
-              <span className="block font-semibold">Impostor a ciegas</span>
-              <span className="block text-sm text-[var(--color-tinta-suave)]">
-                El impostor tampoco ve la categoría.
-              </span>
-            </span>
-          </label>
-        </Card>
+      {/* Reglas extra */}
+      <Section icono={<Sparkles className="h-5 w-5" />} titulo="Reglas extra" sub="Opcionales">
+        <ReglasExtraImpostorSeccion reglas={config.reglasExtra} onChange={setReglasExtra} />
       </Section>
 
       {/* CTA fija */}

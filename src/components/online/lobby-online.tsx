@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2 } from "lucide-react";
+import { Copy, Check, Play, LogOut, Crown, Link as LinkIcon, Share2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { CATEGORIAS_META } from "@/lib/categorias-meta";
-import type { Dificultad } from "@/lib/types";
+import type { Dificultad, ReglasExtraImpostor } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { olvidarJugadorId } from "@/lib/use-sala-impostor";
 import { useRouter } from "next/navigation";
 import type { SalaPublica } from "@/lib/use-sala-impostor";
+import { ReglasExtraImpostorSeccion } from "@/components/juego/reglas-extra";
 
 const DIFICULTADES: { id: Dificultad; nombre: string; tono: string }[] = [
   { id: "facil", nombre: "Fácil", tono: "from-emerald-400 to-emerald-600" },
@@ -247,32 +248,22 @@ export function LobbyOnline({ sala, jugadorId, accion }: Props) {
       </section>
 
       <section>
-        <Card className="p-4">
-          <label className={cn("flex items-center gap-3", esHost ? "cursor-pointer" : "opacity-70")}>
-            <input
-              type="checkbox"
-              disabled={!esHost}
-              checked={sala.config.impostorCiego}
-              onChange={(e) =>
-                accion({
-                  tipo: "configurar",
-                  jugadorId,
-                  config: { impostorCiego: e.target.checked },
-                })
-              }
-              className="sr-only peer"
-            />
-            <span className="relative w-12 h-7 rounded-full border-2 border-[var(--color-borde)] bg-[var(--color-fondo)] peer-checked:gradient-primario transition-colors">
-              <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white border-2 border-[var(--color-borde)] rounded-full peer-checked:translate-x-5 transition-transform" />
-            </span>
-            <span className="flex-1">
-              <span className="block font-semibold">Impostor a ciegas</span>
-              <span className="block text-sm text-[var(--color-tinta-suave)]">
-                El impostor tampoco ve la categoría.
-              </span>
-            </span>
-          </label>
-        </Card>
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <span className="text-[var(--color-primario-500)]"><Sparkles className="h-5 w-5" /></span>
+          <h2 className="font-display font-bold text-xl tracking-tight">Reglas extra</h2>
+          <span className="text-sm text-[var(--color-tinta-suave)] ml-auto">Opcionales</span>
+        </div>
+        <ReglasExtraImpostorSeccion
+          reglas={sala.config.reglasExtra}
+          disabled={!esHost}
+          onChange={(parcial) =>
+            accion({
+              tipo: "configurar",
+              jugadorId,
+              config: { reglasExtra: parcial as Partial<ReglasExtraImpostor> },
+            })
+          }
+        />
       </section>
 
       {!esHost && (

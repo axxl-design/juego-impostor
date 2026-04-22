@@ -1,6 +1,7 @@
-import type { ConfigQuienSoy, SalaQuienSoy } from "./types";
+import type { ConfigQuienSoy, ReglasExtraQuienSoy, SalaQuienSoy } from "./types";
 import { buscarCategoria, CATEGORIAS } from "./palabras";
 import { esMismaPalabra, generarCodigoSala, generarId, mezclar } from "./utils";
+import { generarPista } from "./pistas";
 import {
   normalizarCodigo,
   storageDelete,
@@ -11,15 +12,25 @@ import {
 
 const NS = "quien-soy";
 
-const CONFIG_DEFAULT: ConfigQuienSoy = {
+const REGLAS_DEFAULT: ReglasExtraQuienSoy = {
+  pistasActivas: false,
+  escudoComprable: false,
+};
+
+const CONFIG_DEFAULT: ConfigQuienSoy & { reglasExtra: ReglasExtraQuienSoy } = {
   categoriaId: CATEGORIAS[0].id,
   dificultad: "facil",
   modoVictoria: "puntos",
   objetivo: 5,
+  reglasExtra: { ...REGLAS_DEFAULT },
 };
 
 async function cargar(codigo: string): Promise<SalaQuienSoy | null> {
-  return storageGet<SalaQuienSoy>(NS, codigo);
+  const sala = await storageGet<SalaQuienSoy>(NS, codigo);
+  if (!sala) return null;
+  if (!sala.config.reglasExtra) sala.config.reglasExtra = { ...REGLAS_DEFAULT };
+  if (!sala.pistasUsadas) sala.pistasUsadas = {};
+  return sala;
 }
 
 async function guardar(sala: SalaQuienSoy): Promise<void> {
@@ -36,12 +47,13 @@ export async function crearSala(
     codigo,
     hostId: jugadorId,
     jugadores: [
-      { id: jugadorId, nombre: nombreHost.trim().slice(0, 20) || "Anfitrión", puntos: 0, haVisto: false },
+      { id: jugadorId, nombre: nombreHost.trim().slice(0, 20) || "Anfitrión", puntos: 0, haVisto: false, escudo: false },
     ],
     palabras: {},
-    config: { ...CONFIG_DEFAULT },
+    config: { ...CONFIG_DEFAULT, reglasExtra: { ...REGLAS_DEFAULT } },
     fase: "lobby",
     rondaActual: 0,
+    pistasUsadas: {},
     ultimaAdivinanza: null,
     ganador: null,
     creadaEn: Date.now(),
@@ -62,6 +74,7 @@ export function vistaPublica(sala: SalaQuienSoy) {
     config: sala.config,
     fase: sala.fase,
     rondaActual: sala.rondaActual,
+    pistasUsadas: sala.pistasUsadas,
     ultimaAdivinanza: sala.ultimaAdivinanza,
     ganador: sala.ganador,
     categoriaNombre: buscarCategoria(sala.config.categoriaId)?.nombre ?? null,
@@ -87,7 +100,7 @@ export async function unirse(
   const limpio = nombre.trim().slice(0, 20);
   if (!limpio) return { error: "Nombre inválido" };
   const id = generarId();
-  sala.jugadores.push({ id, nombre: limpio, puntos: 0, haVisto: false });
+  sala.jugadores.push({ id, nombre: limpio, puntos: 0, haVisto: false, escudo: false });
   await guardar(sala);
   return { jugadorId: id };
 }
@@ -108,12 +121,57 @@ export async function salir(codigo: string, jugadorId: string): Promise<void> {
 export async function configurar(
   codigo: string,
   jugadorId: string,
-  parcial: Partial<ConfigQuienSoy>,
+  parcial: Partial<ConfigQuienSoy & { reglasExtra: Partial<ReglasExtraQuienSoy> }>,
 ): Promise<void> {
   const sala = await obtenerSala(codigo);
   if (!sala || sala.hostId !== jugadorId) return;
-  sala.config = { ...sala.config, ...parcial };
+  const reglasExtra = parcial.reglasExtra
+    ? { ...sala.config.reglasExtra, ...parcial.reglasExtra }
+    : sala.config.reglasExtra;
+  sala.config = { ...sala.config, ...parcial, reglasExtra };
   await guardar(sala);
+}
+
+export async function pedirPistaQuienSoy(
+  codigo: string,
+  jugadorId: string,
+): Promise<{ error?: string; texto?: string }> {
+  const sala = await obtenerSala(codigo);
+  if (!sala) return { error: "Sala no encontrada" };
+  if (sala.fase !== "juego") return { error: "Solo durante el juego" };
+  if (!sala.config.reglasExtra.pistasActivas) return { error: "Pistas desactivadas" };
+  const j = sala.jugadores.find((x) => x.id === jugadorId);
+  if (!j) return { error: "Jugador inválido" };
+  const usadas = sala.pistasUsadas[jugadorId] ?? 0;
+  if (usadas >= 3) return { error: "Ya pediste las 3 pistas" };
+  if ((j.puntos ?? 0) <= 0) return { error: "Necesitás al menos 1 punto" };
+  const palabra = sala.palabras[jugadorId];
+  if (!palabra) return { error: "Sin palabra asignada" };
+  const cat = buscarCategoria(sala.config.categoriaId);
+  const nivel = (usadas + 1) as 1 | 2 | 3;
+  const pista = generarPista(palabra, cat?.nombre ?? "", nivel);
+  j.puntos -= 1;
+  sala.pistasUsadas[jugadorId] = usadas + 1;
+  await guardar(sala);
+  return { texto: pista.texto };
+}
+
+export async function comprarEscudoQuienSoy(
+  codigo: string,
+  jugadorId: string,
+): Promise<{ error?: string }> {
+  const sala = await obtenerSala(codigo);
+  if (!sala) return { error: "Sala no encontrada" };
+  if (sala.fase !== "juego") return { error: "Solo durante el juego" };
+  if (!sala.config.reglasExtra.escudoComprable) return { error: "Escudo desactivado" };
+  const j = sala.jugadores.find((x) => x.id === jugadorId);
+  if (!j) return { error: "Jugador inválido" };
+  if (j.escudo) return { error: "Ya tenés un escudo" };
+  if ((j.puntos ?? 0) < 5) return { error: "Necesitás al menos 5 puntos" };
+  j.puntos -= 2;
+  j.escudo = true;
+  await guardar(sala);
+  return {};
 }
 
 function asignar(sala: SalaQuienSoy) {
@@ -124,6 +182,7 @@ function asignar(sala: SalaQuienSoy) {
   sala.jugadores.forEach((j, i) => {
     sala.palabras[j.id] = pool[i % pool.length];
     j.haVisto = false;
+    j.escudo = false;
   });
 }
 
@@ -145,10 +204,14 @@ export async function iniciar(
   if (sala.hostId !== jugadorId) return { error: "Solo el anfitrión puede empezar" };
   if (sala.jugadores.length < 2) return { error: "Necesitan al menos 2 jugadores" };
   if (sala.jugadores.length > 6) return { error: "Máximo 6 jugadores" };
-  sala.jugadores.forEach((j) => (j.puntos = 0));
+  sala.jugadores.forEach((j) => {
+    j.puntos = 0;
+    j.escudo = false;
+  });
   asignar(sala);
   sala.fase = "reparto";
   sala.rondaActual = 1;
+  sala.pistasUsadas = {};
   sala.ultimaAdivinanza = null;
   sala.ganador = null;
   await guardar(sala);
@@ -171,6 +234,8 @@ export async function adivinar(
   const palabraReal = sala.palabras[a.id] ?? "";
   const acerto = esMismaPalabra(intento, palabraReal);
 
+  const escudoActivo = !acerto && de.escudo === true;
+
   sala.ultimaAdivinanza = {
     deId,
     deNombre: de.nombre,
@@ -179,6 +244,7 @@ export async function adivinar(
     intento: intento.slice(0, 60),
     palabraReal,
     acerto,
+    escudoUsado: escudoActivo,
     ts: Date.now(),
   };
 
@@ -210,7 +276,11 @@ export async function adivinar(
     await guardar(sala);
     return { acerto: true };
   } else {
-    de.puntos = Math.max(0, de.puntos - 1);
+    if (escudoActivo) {
+      de.escudo = false;
+    } else {
+      de.puntos = Math.max(0, de.puntos - 1);
+    }
     await guardar(sala);
     return { acerto: false };
   }
@@ -263,10 +333,12 @@ export async function jugarOtraVez(
   sala.jugadores.forEach((j) => {
     j.puntos = 0;
     j.haVisto = false;
+    j.escudo = false;
   });
   asignar(sala);
   sala.fase = "reparto";
   sala.rondaActual = 1;
+  sala.pistasUsadas = {};
   sala.ultimaAdivinanza = null;
   sala.ganador = null;
   await guardar(sala);
@@ -279,11 +351,13 @@ export async function volverALobby(codigo: string, jugadorId: string): Promise<v
   sala.fase = "lobby";
   sala.rondaActual = 0;
   sala.palabras = {};
+  sala.pistasUsadas = {};
   sala.ultimaAdivinanza = null;
   sala.ganador = null;
   sala.jugadores.forEach((j) => {
     j.puntos = 0;
     j.haVisto = false;
+    j.escudo = false;
   });
   await guardar(sala);
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  activarDobleAgente,
   configurar,
   forzarCierre,
   impostorAdivina,
@@ -7,6 +8,8 @@ import {
   nuevaRonda,
   obtenerSala,
   pasarAVotacion,
+  pedirContextoCivil,
+  pedirPistaImpostor,
   salir,
   unirse,
   vistaPublica,
@@ -27,7 +30,10 @@ type Accion =
   | { tipo: "votar"; jugadorId: string; votadoId: string }
   | { tipo: "cerrarVotacion"; jugadorId: string }
   | { tipo: "impostorAdivina"; jugadorId: string; intento: string }
-  | { tipo: "nuevaRonda"; jugadorId: string };
+  | { tipo: "nuevaRonda"; jugadorId: string }
+  | { tipo: "pedirPista"; jugadorId: string }
+  | { tipo: "pedirContextoCivil"; jugadorId: string }
+  | { tipo: "dobleAgente"; jugadorId: string; acusadoId: string };
 
 export async function POST(req: Request, ctx: { params: Promise<{ codigo: string }> }) {
   const { codigo: codigoRaw } = await ctx.params;
@@ -43,6 +49,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
   }
 
   let extra: Record<string, unknown> = {};
+  let broadcastRol = false;
 
   switch (body.tipo) {
     case "unirse": {
@@ -60,6 +67,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
     case "iniciar": {
       const r = await iniciar(codigo, body.jugadorId);
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      broadcastRol = true;
       break;
     }
     case "pasarVotacion":
@@ -82,6 +90,23 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
       if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
       break;
     }
+    case "pedirPista": {
+      const r = await pedirPistaImpostor(codigo, body.jugadorId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      extra = { pista: r.pista };
+      break;
+    }
+    case "pedirContextoCivil": {
+      const r = await pedirContextoCivil(codigo, body.jugadorId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      extra = { texto: r.texto };
+      break;
+    }
+    case "dobleAgente": {
+      const r = await activarDobleAgente(codigo, body.jugadorId, body.acusadoId);
+      if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+      break;
+    }
     default:
       return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });
   }
@@ -90,5 +115,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ codigo: string
   if (!sala) return NextResponse.json({ ok: true, ...extra });
   const publica = vistaPublica(sala);
   await broadcast(`impostor-${codigo}`, "estado-actualizado", publica);
+  if (broadcastRol) {
+    await broadcast(`impostor-${codigo}`, "roles-asignados", { ts: Date.now() });
+  }
   return NextResponse.json({ sala: publica, ...extra });
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Vote } from "lucide-react";
+import { Check, Vote, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
@@ -10,11 +10,15 @@ import { useJuegoLocal } from "@/lib/store-local-impostor";
 import { cn } from "@/lib/utils";
 
 export function VotacionLocal() {
-  const { jugadores, votos, registrarVoto, cerrarVotacion } = useJuegoLocal();
+  const { jugadores, votos, ronda, registrarVoto, cerrarVotacion, usarPoderVidente } = useJuegoLocal();
   const [votanteIdx, setVotanteIdx] = useState(0);
+  const [vision, setVision] = useState<{ observadoNombre: string; votadoNombre: string } | null>(null);
   const votante = jugadores[votanteIdx];
   const yaVoto = votante ? votos[votante.id] : null;
   const todosVotaron = jugadores.every((j) => votos[j.id]);
+  const videnteDeVotante = votante
+    ? ronda?.poderes?.find((p) => p.jugadorId === votante.id && p.tipo === "vidente" && !p.usado)
+    : null;
 
   return (
     <div className="flex flex-col flex-1 px-4 sm:px-6 pb-24 pt-2">
@@ -39,6 +43,23 @@ export function VotacionLocal() {
                 <div className="font-display font-bold text-xl">{votante.nombre}</div>
               </div>
             </div>
+            {videnteDeVotante && !vision && (
+              <button
+                onClick={() => {
+                  const r = usarPoderVidente(votante.id);
+                  if (r) setVision(r);
+                }}
+                className="w-full mb-3 inline-flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-indigo-500/60 bg-indigo-500/10 text-indigo-500 text-xs font-semibold hover:bg-indigo-500/20 transition"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Usar poder Vidente
+              </button>
+            )}
+            {vision && (
+              <div className="mb-3 p-3 rounded-xl bg-indigo-500/10 border-2 border-indigo-500/40 text-sm text-center">
+                👁️ <strong>{vision.observadoNombre}</strong> va a votar a <strong>{vision.votadoNombre}</strong>
+              </div>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {jugadores
                 .filter((j) => j.id !== votante.id)
@@ -66,7 +87,7 @@ export function VotacionLocal() {
               className="w-full mt-4"
               tamano="lg"
               variante="secundario"
-              onClick={() => setVotanteIdx((i) => Math.min(i + 1, jugadores.length - 1))}
+              onClick={() => { setVotanteIdx((i) => Math.min(i + 1, jugadores.length - 1)); setVision(null); }}
               disabled={!yaVoto}
             >
               {votanteIdx === jugadores.length - 1 ? "Listo" : "Pasar al siguiente"}

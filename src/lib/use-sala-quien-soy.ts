@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { obtenerPusherCliente, pusherConfiguradoCliente } from "./pusher-client";
-import type { ConfigQuienSoy } from "./types";
+import type { ConfigQuienSoy, ReglasExtraQuienSoy } from "./types";
 
 export type SalaQuienSoyPublica = {
   codigo: string;
   hostId: string;
-  jugadores: { id: string; nombre: string; puntos: number; haVisto: boolean }[];
-  config: ConfigQuienSoy;
+  jugadores: { id: string; nombre: string; puntos: number; haVisto: boolean; escudo?: boolean }[];
+  config: ConfigQuienSoy & { reglasExtra: ReglasExtraQuienSoy };
   fase: "lobby" | "reparto" | "juego" | "fin";
   rondaActual: number;
+  pistasUsadas: Record<string, number>;
   ultimaAdivinanza: {
     deId: string;
     deNombre: string;
@@ -19,6 +20,7 @@ export type SalaQuienSoyPublica = {
     intento: string;
     palabraReal: string;
     acerto: boolean;
+    escudoUsado?: boolean;
     ts: number;
   } | null;
   ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;

@@ -2,18 +2,22 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ConfigQuienSoy, JugadorQuienSoy } from "./types";
+import type { ConfigQuienSoy, JugadorQuienSoy, ReglasExtraQuienSoy } from "./types";
 import { buscarCategoria, CATEGORIAS } from "./palabras";
 import { esMismaPalabra, generarId, mezclar } from "./utils";
+import { generarPista } from "./pistas";
 
 export type FaseQS = "config" | "reparto" | "juego" | "fin";
 
+export type ConfigQS = ConfigQuienSoy & { reglasExtra: ReglasExtraQuienSoy };
+
 type Estado = {
   jugadores: JugadorQuienSoy[];
-  config: ConfigQuienSoy;
+  config: ConfigQS;
   fase: FaseQS;
   rondaActual: number;
   indiceReparto: number;
+  pistasUsadas: Record<string, number>;
   ultimaAdivinanza: {
     deId: string;
     deNombre: string;
@@ -22,27 +26,37 @@ type Estado = {
     intento: string;
     palabraReal: string;
     acerto: boolean;
+    escudoUsado?: boolean;
   } | null;
   ganador: { tipo: "puntos" | "rondas" | "terminada"; ids: string[] } | null;
   agregarJugador: (nombre: string) => void;
   quitarJugador: (id: string) => void;
   reiniciarJugadores: () => void;
-  setConfig: (parcial: Partial<ConfigQuienSoy>) => void;
+  setConfig: (parcial: Partial<ConfigQS>) => void;
+  setReglasExtra: (parcial: Partial<ReglasExtraQuienSoy>) => void;
   iniciarPartida: () => void;
   marcarVisto: (id: string) => void;
   avanzarReparto: () => void;
   intentarAdivinanza: (deId: string, aId: string, intento: string) => "acierto" | "fallo" | "fin";
+  pedirPista: (jugadorId: string) => { texto: string } | null;
+  comprarEscudo: (jugadorId: string) => boolean;
   terminarPartida: () => void;
   jugarOtraVez: () => void;
   volverAConfig: () => void;
   limpiarUltimaAdivinanza: () => void;
 };
 
-const CONFIG_DEFAULT: ConfigQuienSoy = {
+const REGLAS_DEFAULT: ReglasExtraQuienSoy = {
+  pistasActivas: false,
+  escudoComprable: false,
+};
+
+const CONFIG_DEFAULT: ConfigQS = {
   categoriaId: CATEGORIAS[0].id,
   dificultad: "facil",
   modoVictoria: "puntos",
   objetivo: 5,
+  reglasExtra: { ...REGLAS_DEFAULT },
 };
 
 function asignarPalabras(jugadores: JugadorQuienSoy[], categoriaId: string, dificultad: ConfigQuienSoy["dificultad"]) {
@@ -53,6 +67,7 @@ function asignarPalabras(jugadores: JugadorQuienSoy[], categoriaId: string, difi
     ...j,
     palabra: pool[i % pool.length],
     haVisto: false,
+    escudo: false,
   }));
 }
 
@@ -72,6 +87,7 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
       fase: "config",
       rondaActual: 0,
       indiceReparto: 0,
+      pistasUsadas: {},
       ultimaAdivinanza: null,
       ganador: null,
 
@@ -82,7 +98,7 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
         set((s) => ({
           jugadores: [
             ...s.jugadores,
-            { id: generarId(), nombre: limpio, palabra: "", puntos: 0, haVisto: false },
+            { id: generarId(), nombre: limpio, palabra: "", puntos: 0, haVisto: false, escudo: false },
           ],
         }));
       },
@@ -90,13 +106,20 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
         set((s) => ({ jugadores: s.jugadores.filter((j) => j.id !== id) })),
       reiniciarJugadores: () => set({ jugadores: [] }),
 
-      setConfig: (parcial) => set((s) => ({ config: { ...s.config, ...parcial } })),
+      setConfig: (parcial) =>
+        set((s) => {
+          const next = { ...s.config, ...parcial };
+          if (parcial.reglasExtra) next.reglasExtra = { ...s.config.reglasExtra, ...parcial.reglasExtra };
+          return { config: next };
+        }),
+      setReglasExtra: (parcial) =>
+        set((s) => ({ config: { ...s.config, reglasExtra: { ...s.config.reglasExtra, ...parcial } } })),
 
       iniciarPartida: () => {
         const { jugadores, config } = get();
         if (jugadores.length < 2 || jugadores.length > 6) return;
         const conPalabras = asignarPalabras(
-          jugadores.map((j) => ({ ...j, puntos: 0 })),
+          jugadores.map((j) => ({ ...j, puntos: 0, escudo: false })),
           config.categoriaId,
           config.dificultad,
         );
@@ -105,6 +128,7 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
           fase: "reparto",
           rondaActual: 1,
           indiceReparto: 0,
+          pistasUsadas: {},
           ultimaAdivinanza: null,
           ganador: null,
         });
@@ -122,6 +146,40 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
         } else {
           set({ indiceReparto: indiceReparto + 1 });
         }
+      },
+
+      pedirPista: (jugadorId) => {
+        const { jugadores, pistasUsadas, config } = get();
+        if (!config.reglasExtra.pistasActivas) return null;
+        const j = jugadores.find((x) => x.id === jugadorId);
+        if (!j) return null;
+        const usadas = pistasUsadas[jugadorId] ?? 0;
+        if (usadas >= 3) return null;
+        if (j.puntos <= 0) return null;
+        const nivel = (usadas + 1) as 1 | 2 | 3;
+        const cat = buscarCategoria(config.categoriaId);
+        const catNombre = cat?.nombre ?? "";
+        const pista = generarPista(j.palabra, catNombre, nivel);
+        set({
+          jugadores: jugadores.map((x) => (x.id === jugadorId ? { ...x, puntos: x.puntos - 1 } : x)),
+          pistasUsadas: { ...pistasUsadas, [jugadorId]: usadas + 1 },
+        });
+        return { texto: pista.texto };
+      },
+
+      comprarEscudo: (jugadorId) => {
+        const { jugadores, config } = get();
+        if (!config.reglasExtra.escudoComprable) return false;
+        const j = jugadores.find((x) => x.id === jugadorId);
+        if (!j) return false;
+        if (j.escudo) return false;
+        if (j.puntos < 5) return false;
+        set({
+          jugadores: jugadores.map((x) =>
+            x.id === jugadorId ? { ...x, puntos: x.puntos - 2, escudo: true } : x,
+          ),
+        });
+        return true;
       },
 
       intentarAdivinanza: (deId, aId, intento) => {
@@ -168,9 +226,12 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
           set({ rondaActual: rondaActual + 1 });
           return "acierto";
         } else {
-          const nuevos = jugadores.map((j) =>
-            j.id === deId ? { ...j, puntos: Math.max(0, j.puntos - 1) } : j,
-          );
+          const escudoActivo = de.escudo === true;
+          const nuevos = jugadores.map((j) => {
+            if (j.id !== deId) return j;
+            if (escudoActivo) return { ...j, escudo: false };
+            return { ...j, puntos: Math.max(0, j.puntos - 1) };
+          });
           set({
             jugadores: nuevos,
             ultimaAdivinanza: {
@@ -181,6 +242,7 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
               intento,
               palabraReal,
               acerto: false,
+              escudoUsado: escudoActivo,
             },
           });
           return "fallo";
@@ -196,13 +258,14 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
 
       jugarOtraVez: () => {
         const { jugadores, config } = get();
-        const reseteados = jugadores.map((j) => ({ ...j, puntos: 0, haVisto: false }));
+        const reseteados = jugadores.map((j) => ({ ...j, puntos: 0, haVisto: false, escudo: false }));
         const conPalabras = asignarPalabras(reseteados, config.categoriaId, config.dificultad);
         set({
           jugadores: conPalabras,
           fase: "reparto",
           rondaActual: 1,
           indiceReparto: 0,
+          pistasUsadas: {},
           ultimaAdivinanza: null,
           ganador: null,
         });
@@ -213,6 +276,7 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
           fase: "config",
           rondaActual: 0,
           indiceReparto: 0,
+          pistasUsadas: {},
           ultimaAdivinanza: null,
           ganador: null,
         }),
@@ -221,7 +285,10 @@ export const useJuegoQuienSoyLocal = create<Estado>()(
     }),
     {
       name: "vanny-quien-soy-local",
-      partialize: (s) => ({ jugadores: s.jugadores.map((j) => ({ ...j, palabra: "", puntos: 0, haVisto: false })), config: s.config }),
+      partialize: (s) => ({
+        jugadores: s.jugadores.map((j) => ({ ...j, palabra: "", puntos: 0, haVisto: false, escudo: false })),
+        config: s.config,
+      }),
     },
   ),
 );
